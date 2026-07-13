@@ -1,82 +1,146 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Building2, Globe, Users, Plus } from "lucide-react";
-import { PageHeader, GlassCard, Badge } from "@/components/crm-ui";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import {
+  Search, Plus, Building2, Globe, Phone, Mail, Users, TrendingUp, Filter, Download,
+} from "lucide-react";
+import { PageHeader, GlassCard, Badge, Avatar } from "@/components/crm-ui";
 
 export const Route = createFileRoute("/companies")({
   head: () => ({
     meta: [
       { title: "Companies — UniqueCRM" },
-      { name: "description", content: "All the organizations you work with." },
+      { name: "description", content: "Organizations, industries, and account managers." },
     ],
   }),
   component: CompaniesPage,
 });
 
-const companies = [
-  { name: "Acme Corp", industry: "SaaS", website: "acmecorp.com", employees: 420, deals: 12, arr: "$1.2M", tier: "Enterprise", tone: "brand" as const },
-  { name: "Globex", industry: "Fintech", website: "globex.io", employees: 180, deals: 8, arr: "$680K", tier: "Growth", tone: "info" as const },
-  { name: "Northwind", industry: "E-commerce", website: "northwind.co", employees: 42, deals: 4, arr: "$120K", tier: "Startup", tone: "warning" as const },
-  { name: "Initech", industry: "DevTools", website: "initech.dev", employees: 96, deals: 6, arr: "$310K", tier: "Growth", tone: "info" as const },
-  { name: "Stark Industries", industry: "Hardware", website: "stark.io", employees: 2400, deals: 18, arr: "$4.8M", tier: "Enterprise", tone: "brand" as const },
-  { name: "Umbrella Co.", industry: "Biotech", website: "umbrella.co", employees: 320, deals: 5, arr: "$540K", tier: "Growth", tone: "info" as const },
+export type Company = {
+  id: string;
+  name: string;
+  industry: string;
+  website: string;
+  phone: string;
+  email: string;
+  employees: number;
+  revenue: string;
+  manager: string;
+  tone: number;
+};
+
+export const COMPANIES: Company[] = [
+  { id: "northwind", name: "Northwind Labs", industry: "SaaS", website: "northwind.io", phone: "+1 415 555 2201", email: "hello@northwind.io", employees: 240, revenue: "$18.4M", manager: "Ava Reynolds", tone: 0 },
+  { id: "lumen", name: "Lumen Studios", industry: "Design", website: "lumen.co", phone: "+1 628 555 9911", email: "team@lumen.co", employees: 55, revenue: "$4.2M", manager: "Marcus Chen", tone: 1 },
+  { id: "halcyon", name: "Halcyon Systems", industry: "Cloud Infra", website: "halcyon.dev", phone: "+91 98765 12345", email: "sales@halcyon.dev", employees: 480, revenue: "$62M", manager: "Priya Natarajan", tone: 2 },
+  { id: "meridian", name: "Meridian & Co", industry: "Finance", website: "meridian.com", phone: "+34 611 22 33 44", email: "info@meridian.com", employees: 1200, revenue: "$210M", manager: "Diego Alvarez", tone: 3 },
+  { id: "aster", name: "Aster Health", industry: "Healthcare", website: "aster.health", phone: "+44 20 7946 0011", email: "care@aster.health", employees: 340, revenue: "$28M", manager: "Sofia Petrov", tone: 4 },
+  { id: "arcadia", name: "Arcadia Media", industry: "Media", website: "arcadia.tv", phone: "+1 312 555 6688", email: "press@arcadia.tv", employees: 88, revenue: "$9.1M", manager: "Jamal Turner", tone: 0 },
 ];
 
 function CompaniesPage() {
+  const [query, setQuery] = useState("");
+  const [industry, setIndustry] = useState("All");
+
+  const industries = useMemo(
+    () => ["All", ...Array.from(new Set(COMPANIES.map((c) => c.industry)))],
+    [],
+  );
+
+  const filtered = COMPANIES.filter((c) => {
+    const q = query.toLowerCase();
+    return (
+      (industry === "All" || c.industry === industry) &&
+      (!q || c.name.toLowerCase().includes(q) || c.industry.toLowerCase().includes(q))
+    );
+  });
+
   return (
-    <div className="mx-auto max-w-7xl">
+    <div>
       <PageHeader
         title="Companies"
-        subtitle="218 organizations across 14 industries"
+        subtitle="Every organization you're working with, in one place."
         actions={
-          <button className="gradient-brand-bg glow-shadow-sm inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white transition-transform hover:scale-[1.02]">
-            <Plus className="h-4 w-4" />
-            Add company
-          </button>
+          <>
+            <button className="glass hidden items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-white/5 sm:inline-flex">
+              <Download className="h-4 w-4" /> Export
+            </button>
+            <button className="gradient-brand-bg inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white glow-shadow-sm">
+              <Plus className="h-4 w-4" /> Add Company
+            </button>
+          </>
         }
       />
 
+      <GlassCard className="mb-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search companies…"
+              className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {industries.map((i) => (
+              <button
+                key={i}
+                onClick={() => setIndustry(i)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                  industry === i
+                    ? "border-transparent text-white [background:var(--gradient-brand)] glow-shadow-sm"
+                    : "border-white/10 bg-white/5 text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {i}
+              </button>
+            ))}
+            <button className="glass inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs">
+              <Filter className="h-3.5 w-3.5" /> More
+            </button>
+          </div>
+        </div>
+      </GlassCard>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {companies.map((c) => (
-          <GlassCard key={c.name} className="transition-transform hover:-translate-y-0.5">
+        {filtered.map((c) => (
+          <Link
+            key={c.id}
+            to="/companies/$companyId"
+            params={{ companyId: c.id }}
+            className="glass group relative overflow-hidden rounded-2xl p-5 transition hover:-translate-y-0.5 hover:glow-shadow-sm"
+          >
+            <div className="pointer-events-none absolute -right-14 -top-14 h-40 w-40 rounded-full opacity-30 blur-3xl [background:var(--gradient-brand)]" />
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="gradient-brand-bg grid h-12 w-12 shrink-0 place-items-center rounded-xl text-white">
+                <div className="gradient-brand-bg grid h-11 w-11 shrink-0 place-items-center rounded-xl text-white glow-shadow-sm">
                   <Building2 className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="truncate text-base font-semibold">{c.name}</h3>
-                  <p className="truncate text-xs text-muted-foreground">{c.industry}</p>
+                  <div className="truncate font-semibold">{c.name}</div>
+                  <div className="text-xs text-muted-foreground">{c.industry}</div>
                 </div>
               </div>
-              <Badge tone={c.tone}>{c.tier}</Badge>
+              <Badge tone="brand">{c.revenue}</Badge>
             </div>
 
-            <div className="mt-5 grid grid-cols-3 gap-3 border-t border-white/5 pt-4 text-center">
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Deals</p>
-                <p className="mt-0.5 text-sm font-semibold">{c.deals}</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Employees</p>
-                <p className="mt-0.5 text-sm font-semibold">{c.employees}</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground">ARR</p>
-                <p className="mt-0.5 gradient-text text-sm font-semibold">{c.arr}</p>
-              </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5 truncate"><Globe className="h-3.5 w-3.5" />{c.website}</div>
+              <div className="flex items-center gap-1.5 truncate"><Phone className="h-3.5 w-3.5" />{c.phone}</div>
+              <div className="flex items-center gap-1.5 truncate col-span-2"><Mail className="h-3.5 w-3.5" />{c.email}</div>
             </div>
 
-            <div className="mt-4 flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1">
-                <Globe className="h-3 w-3" />
-                {c.website}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <Users className="h-3 w-3" />
-                {c.employees}
-              </span>
+            <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Users className="h-3.5 w-3.5" /> {c.employees} employees
+              </div>
+              <div className="flex items-center gap-2">
+                <Avatar name={c.manager} tone={c.tone} />
+                <span className="text-xs text-muted-foreground">{c.manager}</span>
+              </div>
             </div>
-          </GlassCard>
+          </Link>
         ))}
       </div>
     </div>

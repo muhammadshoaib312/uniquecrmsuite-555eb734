@@ -22,6 +22,7 @@ import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LeadsIndexRouteImport } from './routes/leads.index'
 import { Route as LeadsLeadIdRouteImport } from './routes/leads.$leadId'
+import { Route as CompaniesCompanyIdRouteImport } from './routes/companies.$companyId'
 
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
@@ -88,11 +89,16 @@ const LeadsLeadIdRoute = LeadsLeadIdRouteImport.update({
   path: '/leads/$leadId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CompaniesCompanyIdRoute = CompaniesCompanyIdRouteImport.update({
+  id: '/$companyId',
+  path: '/$companyId',
+  getParentRoute: () => CompaniesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
-  '/companies': typeof CompaniesRoute
+  '/companies': typeof CompaniesRouteWithChildren
   '/contacts': typeof ContactsRoute
   '/deals': typeof DealsRoute
   '/inbox': typeof InboxRoute
@@ -101,13 +107,14 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/tasks': typeof TasksRoute
+  '/companies/$companyId': typeof CompaniesCompanyIdRoute
   '/leads/$leadId': typeof LeadsLeadIdRoute
   '/leads/': typeof LeadsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
-  '/companies': typeof CompaniesRoute
+  '/companies': typeof CompaniesRouteWithChildren
   '/contacts': typeof ContactsRoute
   '/deals': typeof DealsRoute
   '/inbox': typeof InboxRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/tasks': typeof TasksRoute
+  '/companies/$companyId': typeof CompaniesCompanyIdRoute
   '/leads/$leadId': typeof LeadsLeadIdRoute
   '/leads': typeof LeadsIndexRoute
 }
@@ -123,7 +131,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
-  '/companies': typeof CompaniesRoute
+  '/companies': typeof CompaniesRouteWithChildren
   '/contacts': typeof ContactsRoute
   '/deals': typeof DealsRoute
   '/inbox': typeof InboxRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/tasks': typeof TasksRoute
+  '/companies/$companyId': typeof CompaniesCompanyIdRoute
   '/leads/$leadId': typeof LeadsLeadIdRoute
   '/leads/': typeof LeadsIndexRoute
 }
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/tasks'
+    | '/companies/$companyId'
     | '/leads/$leadId'
     | '/leads/'
   fileRoutesByTo: FileRoutesByTo
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/tasks'
+    | '/companies/$companyId'
     | '/leads/$leadId'
     | '/leads'
   id:
@@ -179,6 +190,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/tasks'
+    | '/companies/$companyId'
     | '/leads/$leadId'
     | '/leads/'
   fileRoutesById: FileRoutesById
@@ -186,7 +198,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalyticsRoute: typeof AnalyticsRoute
-  CompaniesRoute: typeof CompaniesRoute
+  CompaniesRoute: typeof CompaniesRouteWithChildren
   ContactsRoute: typeof ContactsRoute
   DealsRoute: typeof DealsRoute
   InboxRoute: typeof InboxRoute
@@ -292,13 +304,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LeadsLeadIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/companies/$companyId': {
+      id: '/companies/$companyId'
+      path: '/$companyId'
+      fullPath: '/companies/$companyId'
+      preLoaderRoute: typeof CompaniesCompanyIdRouteImport
+      parentRoute: typeof CompaniesRoute
+    }
   }
 }
+
+interface CompaniesRouteChildren {
+  CompaniesCompanyIdRoute: typeof CompaniesCompanyIdRoute
+}
+
+const CompaniesRouteChildren: CompaniesRouteChildren = {
+  CompaniesCompanyIdRoute: CompaniesCompanyIdRoute,
+}
+
+const CompaniesRouteWithChildren = CompaniesRoute._addFileChildren(
+  CompaniesRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalyticsRoute: AnalyticsRoute,
-  CompaniesRoute: CompaniesRoute,
+  CompaniesRoute: CompaniesRouteWithChildren,
   ContactsRoute: ContactsRoute,
   DealsRoute: DealsRoute,
   InboxRoute: InboxRoute,
