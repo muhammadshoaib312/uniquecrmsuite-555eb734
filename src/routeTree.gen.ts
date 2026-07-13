@@ -11,6 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as MeetingsRouteImport } from './routes/meetings'
+import { Route as LeadsRouteImport } from './routes/leads'
+import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as DealsRouteImport } from './routes/deals'
 import { Route as ContactsRouteImport } from './routes/contacts'
@@ -26,6 +30,26 @@ const TasksRoute = TasksRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeetingsRoute = MeetingsRouteImport.update({
+  id: '/meetings',
+  path: '/meetings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeadsRoute = LeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvoicesRoute = InvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InboxRoute = InboxRouteImport.update({
@@ -66,6 +90,10 @@ export interface FileRoutesByFullPath {
   '/contacts': typeof ContactsRoute
   '/deals': typeof DealsRoute
   '/inbox': typeof InboxRoute
+  '/invoices': typeof InvoicesRoute
+  '/leads': typeof LeadsRoute
+  '/meetings': typeof MeetingsRoute
+  '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/tasks': typeof TasksRoute
 }
@@ -76,6 +104,10 @@ export interface FileRoutesByTo {
   '/contacts': typeof ContactsRoute
   '/deals': typeof DealsRoute
   '/inbox': typeof InboxRoute
+  '/invoices': typeof InvoicesRoute
+  '/leads': typeof LeadsRoute
+  '/meetings': typeof MeetingsRoute
+  '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/tasks': typeof TasksRoute
 }
@@ -87,6 +119,10 @@ export interface FileRoutesById {
   '/contacts': typeof ContactsRoute
   '/deals': typeof DealsRoute
   '/inbox': typeof InboxRoute
+  '/invoices': typeof InvoicesRoute
+  '/leads': typeof LeadsRoute
+  '/meetings': typeof MeetingsRoute
+  '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/tasks': typeof TasksRoute
 }
@@ -99,6 +135,10 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/deals'
     | '/inbox'
+    | '/invoices'
+    | '/leads'
+    | '/meetings'
+    | '/reports'
     | '/settings'
     | '/tasks'
   fileRoutesByTo: FileRoutesByTo
@@ -109,6 +149,10 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/deals'
     | '/inbox'
+    | '/invoices'
+    | '/leads'
+    | '/meetings'
+    | '/reports'
     | '/settings'
     | '/tasks'
   id:
@@ -119,6 +163,10 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/deals'
     | '/inbox'
+    | '/invoices'
+    | '/leads'
+    | '/meetings'
+    | '/reports'
     | '/settings'
     | '/tasks'
   fileRoutesById: FileRoutesById
@@ -130,6 +178,10 @@ export interface RootRouteChildren {
   ContactsRoute: typeof ContactsRoute
   DealsRoute: typeof DealsRoute
   InboxRoute: typeof InboxRoute
+  InvoicesRoute: typeof InvoicesRoute
+  LeadsRoute: typeof LeadsRoute
+  MeetingsRoute: typeof MeetingsRoute
+  ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   TasksRoute: typeof TasksRoute
 }
@@ -148,6 +200,34 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meetings': {
+      id: '/meetings'
+      path: '/meetings'
+      fullPath: '/meetings'
+      preLoaderRoute: typeof MeetingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leads': {
+      id: '/leads'
+      path: '/leads'
+      fullPath: '/leads'
+      preLoaderRoute: typeof LeadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invoices': {
+      id: '/invoices'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof InvoicesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inbox': {
@@ -202,9 +282,23 @@ const rootRouteChildren: RootRouteChildren = {
   ContactsRoute: ContactsRoute,
   DealsRoute: DealsRoute,
   InboxRoute: InboxRoute,
+  InvoicesRoute: InvoicesRoute,
+  LeadsRoute: LeadsRoute,
+  MeetingsRoute: MeetingsRoute,
+  ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   TasksRoute: TasksRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
