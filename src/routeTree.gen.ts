@@ -13,7 +13,6 @@ import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as MeetingsRouteImport } from './routes/meetings'
-import { Route as LeadsRouteImport } from './routes/leads'
 import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as DealsRouteImport } from './routes/deals'
@@ -21,6 +20,8 @@ import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as CompaniesRouteImport } from './routes/companies'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LeadsIndexRouteImport } from './routes/leads.index'
+import { Route as LeadsLeadIdRouteImport } from './routes/leads.$leadId'
 
 const TasksRoute = TasksRouteImport.update({
   id: '/tasks',
@@ -40,11 +41,6 @@ const ReportsRoute = ReportsRouteImport.update({
 const MeetingsRoute = MeetingsRouteImport.update({
   id: '/meetings',
   path: '/meetings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LeadsRoute = LeadsRouteImport.update({
-  id: '/leads',
-  path: '/leads',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvoicesRoute = InvoicesRouteImport.update({
@@ -82,6 +78,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LeadsIndexRoute = LeadsIndexRouteImport.update({
+  id: '/leads/',
+  path: '/leads/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeadsLeadIdRoute = LeadsLeadIdRouteImport.update({
+  id: '/leads/$leadId',
+  path: '/leads/$leadId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -91,11 +97,12 @@ export interface FileRoutesByFullPath {
   '/deals': typeof DealsRoute
   '/inbox': typeof InboxRoute
   '/invoices': typeof InvoicesRoute
-  '/leads': typeof LeadsRoute
   '/meetings': typeof MeetingsRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/tasks': typeof TasksRoute
+  '/leads/$leadId': typeof LeadsLeadIdRoute
+  '/leads/': typeof LeadsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -105,11 +112,12 @@ export interface FileRoutesByTo {
   '/deals': typeof DealsRoute
   '/inbox': typeof InboxRoute
   '/invoices': typeof InvoicesRoute
-  '/leads': typeof LeadsRoute
   '/meetings': typeof MeetingsRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/tasks': typeof TasksRoute
+  '/leads/$leadId': typeof LeadsLeadIdRoute
+  '/leads': typeof LeadsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -120,11 +128,12 @@ export interface FileRoutesById {
   '/deals': typeof DealsRoute
   '/inbox': typeof InboxRoute
   '/invoices': typeof InvoicesRoute
-  '/leads': typeof LeadsRoute
   '/meetings': typeof MeetingsRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/tasks': typeof TasksRoute
+  '/leads/$leadId': typeof LeadsLeadIdRoute
+  '/leads/': typeof LeadsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -136,11 +145,12 @@ export interface FileRouteTypes {
     | '/deals'
     | '/inbox'
     | '/invoices'
-    | '/leads'
     | '/meetings'
     | '/reports'
     | '/settings'
     | '/tasks'
+    | '/leads/$leadId'
+    | '/leads/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -150,11 +160,12 @@ export interface FileRouteTypes {
     | '/deals'
     | '/inbox'
     | '/invoices'
-    | '/leads'
     | '/meetings'
     | '/reports'
     | '/settings'
     | '/tasks'
+    | '/leads/$leadId'
+    | '/leads'
   id:
     | '__root__'
     | '/'
@@ -164,11 +175,12 @@ export interface FileRouteTypes {
     | '/deals'
     | '/inbox'
     | '/invoices'
-    | '/leads'
     | '/meetings'
     | '/reports'
     | '/settings'
     | '/tasks'
+    | '/leads/$leadId'
+    | '/leads/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -179,11 +191,12 @@ export interface RootRouteChildren {
   DealsRoute: typeof DealsRoute
   InboxRoute: typeof InboxRoute
   InvoicesRoute: typeof InvoicesRoute
-  LeadsRoute: typeof LeadsRoute
   MeetingsRoute: typeof MeetingsRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   TasksRoute: typeof TasksRoute
+  LeadsLeadIdRoute: typeof LeadsLeadIdRoute
+  LeadsIndexRoute: typeof LeadsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -214,13 +227,6 @@ declare module '@tanstack/react-router' {
       path: '/meetings'
       fullPath: '/meetings'
       preLoaderRoute: typeof MeetingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/leads': {
-      id: '/leads'
-      path: '/leads'
-      fullPath: '/leads'
-      preLoaderRoute: typeof LeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invoices': {
@@ -272,6 +278,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/leads/': {
+      id: '/leads/'
+      path: '/leads'
+      fullPath: '/leads/'
+      preLoaderRoute: typeof LeadsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leads/$leadId': {
+      id: '/leads/$leadId'
+      path: '/leads/$leadId'
+      fullPath: '/leads/$leadId'
+      preLoaderRoute: typeof LeadsLeadIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -283,11 +303,12 @@ const rootRouteChildren: RootRouteChildren = {
   DealsRoute: DealsRoute,
   InboxRoute: InboxRoute,
   InvoicesRoute: InvoicesRoute,
-  LeadsRoute: LeadsRoute,
   MeetingsRoute: MeetingsRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   TasksRoute: TasksRoute,
+  LeadsLeadIdRoute: LeadsLeadIdRoute,
+  LeadsIndexRoute: LeadsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
