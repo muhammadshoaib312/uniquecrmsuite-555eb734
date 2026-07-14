@@ -19,7 +19,9 @@ import {
   X,
   ChevronsLeft,
   ChevronsRight,
+  Palette,
 } from "lucide-react";
+import { ThemeToggle, NotificationPanel, UserMenu } from "@/components/ui-kit";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -31,6 +33,7 @@ const nav = [
   { to: "/meetings", label: "Meetings", icon: CalendarDays },
   { to: "/invoices", label: "Invoices", icon: Receipt },
   { to: "/reports", label: "Reports", icon: BarChart3 },
+  { to: "/design-system", label: "Design System", icon: Palette },
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
