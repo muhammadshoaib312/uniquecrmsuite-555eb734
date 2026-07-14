@@ -87,10 +87,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         property: "og:description",
         content:
-          "A premium, glassmorphic CRM workspace for modern teams. Contacts, deals, pipelines, tasks, and analytics.",
+          "UniqueCRM is a premium SaaS CRM by UniqueWeb — manage contacts, deals, pipelines, and revenue with a beautiful modern workspace.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "UniqueCRM — Modern CRM by UniqueWeb" },
+      { name: "twitter:description", content: "UniqueCRM is a premium SaaS CRM by UniqueWeb — manage contacts, deals, pipelines, and revenue with a beautiful modern workspace." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/de44c946-bd54-4c72-8164-9f8ada923d54/id-preview-8c42bdba--5a6c42a3-95b1-474a-8bbb-133d1311affe.lovable.app-1783983896317.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/de44c946-bd54-4c72-8164-9f8ada923d54/id-preview-8c42bdba--5a6c42a3-95b1-474a-8bbb-133d1311affe.lovable.app-1783983896317.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
