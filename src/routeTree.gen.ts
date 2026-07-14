@@ -16,6 +16,7 @@ import { Route as MeetingsRouteImport } from './routes/meetings'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as InboxRouteImport } from './routes/inbox'
+import { Route as DesignSystemRouteImport } from './routes/design-system'
 import { Route as DealsRouteImport } from './routes/deals'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as CompaniesRouteImport } from './routes/companies'
@@ -61,6 +62,11 @@ const InvoicesRoute = InvoicesRouteImport.update({
 const InboxRoute = InboxRouteImport.update({
   id: '/inbox',
   path: '/inbox',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DesignSystemRoute = DesignSystemRouteImport.update({
+  id: '/design-system',
+  path: '/design-system',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DealsRoute = DealsRouteImport.update({
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/companies': typeof CompaniesRouteWithChildren
   '/contacts': typeof ContactsRoute
   '/deals': typeof DealsRoute
+  '/design-system': typeof DesignSystemRoute
   '/inbox': typeof InboxRoute
   '/invoices': typeof InvoicesRoute
   '/mcp': typeof McpRoute
@@ -148,6 +155,7 @@ export interface FileRoutesByTo {
   '/companies': typeof CompaniesRouteWithChildren
   '/contacts': typeof ContactsRoute
   '/deals': typeof DealsRoute
+  '/design-system': typeof DesignSystemRoute
   '/inbox': typeof InboxRoute
   '/invoices': typeof InvoicesRoute
   '/mcp': typeof McpRoute
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/companies': typeof CompaniesRouteWithChildren
   '/contacts': typeof ContactsRoute
   '/deals': typeof DealsRoute
+  '/design-system': typeof DesignSystemRoute
   '/inbox': typeof InboxRoute
   '/invoices': typeof InvoicesRoute
   '/mcp': typeof McpRoute
@@ -191,6 +200,7 @@ export interface FileRouteTypes {
     | '/companies'
     | '/contacts'
     | '/deals'
+    | '/design-system'
     | '/inbox'
     | '/invoices'
     | '/mcp'
@@ -211,6 +221,7 @@ export interface FileRouteTypes {
     | '/companies'
     | '/contacts'
     | '/deals'
+    | '/design-system'
     | '/inbox'
     | '/invoices'
     | '/mcp'
@@ -231,6 +242,7 @@ export interface FileRouteTypes {
     | '/companies'
     | '/contacts'
     | '/deals'
+    | '/design-system'
     | '/inbox'
     | '/invoices'
     | '/mcp'
@@ -252,6 +264,7 @@ export interface RootRouteChildren {
   CompaniesRoute: typeof CompaniesRouteWithChildren
   ContactsRoute: typeof ContactsRoute
   DealsRoute: typeof DealsRoute
+  DesignSystemRoute: typeof DesignSystemRoute
   InboxRoute: typeof InboxRoute
   InvoicesRoute: typeof InvoicesRoute
   McpRoute: typeof McpRoute
@@ -315,6 +328,13 @@ declare module '@tanstack/react-router' {
       path: '/inbox'
       fullPath: '/inbox'
       preLoaderRoute: typeof InboxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/design-system': {
+      id: '/design-system'
+      path: '/design-system'
+      fullPath: '/design-system'
+      preLoaderRoute: typeof DesignSystemRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/deals': {
@@ -415,6 +435,7 @@ const rootRouteChildren: RootRouteChildren = {
   CompaniesRoute: CompaniesRouteWithChildren,
   ContactsRoute: ContactsRoute,
   DealsRoute: DealsRoute,
+  DesignSystemRoute: DesignSystemRoute,
   InboxRoute: InboxRoute,
   InvoicesRoute: InvoicesRoute,
   McpRoute: McpRoute,
