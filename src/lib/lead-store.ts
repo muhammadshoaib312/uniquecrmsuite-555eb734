@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 
 const KEY = "uniquecrm-leads-added";
 
+export type Source = "Website" | "Referral" | "LinkedIn" | "Cold call" | "Event" | "Other";
+
 export type StoredLead = {
   id: string;
   name: string;
@@ -10,6 +12,7 @@ export type StoredLead = {
   phone: string;
   status: "New" | "Contacted" | "Qualified" | "Proposal" | "Won" | "Lost";
   priority: "High" | "Medium" | "Low";
+  source: Source;
   owner: string;
   created: string;
 };
