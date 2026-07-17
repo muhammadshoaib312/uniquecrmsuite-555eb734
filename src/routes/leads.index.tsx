@@ -360,78 +360,80 @@ function LeadsPage() {
         </div>
       </GlassCard>
 
-      <AddLeadModal
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        onCreate={(l) => {
-          add(l);
+      <LeadModal
+        open={addOpen || !!editing}
+        editing={editing}
+        onClose={() => { setAddOpen(false); setEditing(null); }}
+        onSave={(l) => {
+          if (editing) {
+            update(editing.id, l);
+          } else {
+            add(l);
+            setPage(1);
+          }
           setAddOpen(false);
-          setPage(1);
+          setEditing(null);
         }}
       />
     </div>
   );
 }
 
-function AddLeadModal({
-  open,
-  onClose,
-  onCreate,
+type LeadForm = Omit<StoredLead, "id" | "created">;
+const EMPTY_FORM: LeadForm = {
+  name: "", company: "", email: "", phone: "",
+  status: "New", priority: "Medium", source: "Website", owner: "Alex N.",
+};
+
+function LeadModal({
+  open, editing, onClose, onSave,
 }: {
   open: boolean;
+  editing: StoredLead | null;
   onClose: () => void;
-  onCreate: (l: Omit<StoredLead, "id" | "created">) => void;
+  onSave: (l: LeadForm) => void;
 }) {
-  const [name, setName] = useState("");
-  const [company, setCompany] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [status, setStatus] = useState<StoredLead["status"]>("New");
-  const [priority, setPriority] = useState<StoredLead["priority"]>("Medium");
-  const [owner, setOwner] = useState("Alex N.");
-
-  const reset = () => {
-    setName(""); setCompany(""); setEmail(""); setPhone("");
-    setStatus("New"); setPriority("Medium"); setOwner("Alex N.");
-  };
+  const [form, setForm] = useState<LeadForm>(EMPTY_FORM);
+  useEffect(() => {
+    if (editing) {
+      const { id: _id, created: _created, ...rest } = editing;
+      setForm(rest);
+    } else {
+      setForm(EMPTY_FORM);
+    }
+  }, [editing, open]);
 
   return (
     <Modal
       open={open}
-      onClose={() => { onClose(); reset(); }}
-      title="Add lead"
+      onClose={onClose}
+      title={editing ? "Edit lead" : "Add lead"}
       footer={
         <>
-          <Button variant="ghost" onClick={() => { onClose(); reset(); }}>Cancel</Button>
-          <Button
-            onClick={() => {
-              if (!name || !email) return;
-              onCreate({ name, company, email, phone, status, priority, owner });
-              reset();
-            }}
-          >
-            Create lead
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => { if (!form.name || !form.email) return; onSave(form); }}>
+            {editing ? "Save changes" : "Create lead"}
           </Button>
         </>
       }
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField label="Full name">
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Jane Doe" />
+          <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Jane Doe" />
         </FormField>
         <FormField label="Company">
-          <Input value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Acme Corp" />
+          <Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} placeholder="Acme Corp" />
         </FormField>
         <FormField label="Email">
-          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jane@acme.co" />
+          <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="jane@acme.co" />
         </FormField>
         <FormField label="Phone">
-          <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 555…" />
+          <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+1 555…" />
         </FormField>
         <FormField label="Status">
           <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value as StoredLead["status"])}
+            value={form.status}
+            onChange={(e) => setForm({ ...form, status: e.target.value as StoredLead["status"] })}
             className="glass h-10 w-full rounded-lg border-0 px-3 text-sm outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
           >
             {(["New", "Contacted", "Qualified", "Proposal", "Won", "Lost"] as const).map((s) => (
@@ -441,8 +443,8 @@ function AddLeadModal({
         </FormField>
         <FormField label="Priority">
           <select
-            value={priority}
-            onChange={(e) => setPriority(e.target.value as StoredLead["priority"])}
+            value={form.priority}
+            onChange={(e) => setForm({ ...form, priority: e.target.value as StoredLead["priority"] })}
             className="glass h-10 w-full rounded-lg border-0 px-3 text-sm outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
           >
             {(["High", "Medium", "Low"] as const).map((p) => (
@@ -450,8 +452,17 @@ function AddLeadModal({
             ))}
           </select>
         </FormField>
+        <FormField label="Source">
+          <select
+            value={form.source}
+            onChange={(e) => setForm({ ...form, source: e.target.value as Source })}
+            className="glass h-10 w-full rounded-lg border-0 px-3 text-sm outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
+          >
+            {SOURCES.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </FormField>
         <FormField label="Owner">
-          <Input value={owner} onChange={(e) => setOwner(e.target.value)} />
+          <Input value={form.owner} onChange={(e) => setForm({ ...form, owner: e.target.value })} />
         </FormField>
       </div>
     </Modal>
