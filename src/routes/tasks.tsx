@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Plus, List, KanbanSquare, Calendar as CalIcon, Flag, Clock,
-  CheckCircle2, Circle, AlertCircle, Timer, ChevronLeft, ChevronRight,
+  CheckCircle2, Circle, AlertCircle, Timer, ChevronLeft, ChevronRight, Trash2,
 } from "lucide-react";
 import { PageHeader, GlassCard, Badge, Avatar } from "@/components/crm-ui";
+import { Modal, Button, FormField, Input } from "@/components/ui-kit";
+import { useRecordStore } from "@/lib/record-store";
 
 export const Route = createFileRoute("/tasks")({
   head: () => ({
@@ -28,7 +30,7 @@ type Task = {
   due: string; // YYYY-MM-DD
 };
 
-const TASKS: Task[] = [
+const STATIC_TASKS: Task[] = [
   { id: "1", title: "Send Northwind renewal proposal", assignee: "Ava", tone: 0, priority: "High", status: "In Progress", due: "2026-07-14" },
   { id: "2", title: "Prep Q3 pipeline review deck", assignee: "Marcus", tone: 1, priority: "High", status: "Pending", due: "2026-07-15" },
   { id: "3", title: "Follow up with Halcyon on SOC2", assignee: "Priya", tone: 2, priority: "Medium", status: "Overdue", due: "2026-07-10" },
@@ -49,16 +51,36 @@ const statusIcon: Record<Status, { icon: typeof Circle; className: string }> = {
   Overdue: { icon: AlertCircle, className: "text-rose-400" },
 };
 
+type FormState = Omit<Task, "id" | "tone">;
+const EMPTY: FormState = { title: "", assignee: "", priority: "Medium", status: "Pending", due: "" };
+
 function TasksPage() {
   const [view, setView] = useState<"list" | "board" | "calendar">("list");
+  const { items: added, add, update, remove } = useRecordStore<Task>("tasks");
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const combined = useMemo(() => [...added, ...STATIC_TASKS], [added]);
+  const addedIds = new Set(added.map((t) => t.id));
+
+  function toggleStatus(t: Task) {
+    if (!addedIds.has(t.id)) return; // static tasks not persisted
+    const next: Status = t.status === "Completed" ? "Pending" : "Completed";
+    update(t.id, { status: next });
+  }
+  function handleDelete(id: string) {
+    if (confirm("Delete this task?")) remove(id);
+  }
 
   return (
     <div>
       <PageHeader
         title="Tasks"
-        subtitle="Plan work, track progress, hit deadlines."
+        subtitle={`${combined.length} tasks · ${combined.filter((t) => t.status !== "Completed").length} open`}
         actions={
-          <button className="gradient-brand-bg inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white glow-shadow-sm">
+          <button
+            onClick={() => setModalOpen(true)}
+            className="gradient-brand-bg inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white glow-shadow-sm"
+          >
             <Plus className="h-4 w-4" /> New Task
           </button>
         }
@@ -82,14 +104,25 @@ function TasksPage() {
         ))}
       </div>
 
-      {view === "list" && <ListView />}
-      {view === "board" && <BoardView />}
-      {view === "calendar" && <CalendarView />}
+      {view === "list" && <ListView tasks={combined} addedIds={addedIds} onToggle={toggleStatus} onDelete={handleDelete} />}
+      {view === "board" && <BoardView tasks={combined} />}
+      {view === "calendar" && <CalendarView tasks={combined} />}
+
+      <TaskModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={(f) => { add({ ...f, tone: Math.floor(Math.random() * 5) } as Omit<Task, "id">); setModalOpen(false); }}
+      />
     </div>
   );
 }
 
-function ListView() {
+function ListView({ tasks, addedIds, onToggle, onDelete }: {
+  tasks: Task[];
+  addedIds: Set<string>;
+  onToggle: (t: Task) => void;
+  onDelete: (id: string) => void;
+}) {
   return (
     <GlassCard className="overflow-hidden !p-0">
       <div className="overflow-x-auto">
@@ -101,22 +134,31 @@ function ListView() {
               <th className="px-5 py-3 font-medium">Priority</th>
               <th className="px-5 py-3 font-medium">Status</th>
               <th className="px-5 py-3 font-medium">Due</th>
+              <th className="px-5 py-3" />
             </tr>
           </thead>
           <tbody>
-            {TASKS.map((t) => {
+            {tasks.map((t) => {
               const S = statusIcon[t.status];
+              const canEdit = addedIds.has(t.id);
               return (
                 <tr key={t.id} className="border-t border-white/5 transition hover:bg-white/[0.03]">
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
-                      <S.icon className={`h-4 w-4 shrink-0 ${S.className}`} />
+                      <button
+                        type="button"
+                        onClick={() => onToggle(t)}
+                        title={canEdit ? "Toggle complete" : "Toggle available on user-created tasks"}
+                        className={canEdit ? "cursor-pointer" : "cursor-default"}
+                      >
+                        <S.icon className={`h-4 w-4 shrink-0 ${S.className}`} />
+                      </button>
                       <span className={t.status === "Completed" ? "line-through text-muted-foreground" : ""}>{t.title}</span>
                     </div>
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">
-                      <Avatar name={t.assignee} tone={t.tone} />
+                      <Avatar name={t.assignee || "—"} tone={t.tone} />
                       <span className="text-muted-foreground">{t.assignee}</span>
                     </div>
                   </td>
@@ -125,8 +167,17 @@ function ListView() {
                       <Flag className="mr-1 inline h-3 w-3" />{t.priority}
                     </Badge>
                   </td>
-                  <td className="px-5 py-3.5"><Badge tone={t.status === "Completed" ? "success" : t.status === "Overdue" ? "warning" : t.status === "In Progress" ? "info" : "default"}>{t.status}</Badge></td>
-                  <td className="px-5 py-3.5 text-muted-foreground"><Clock className="mr-1 inline h-3.5 w-3.5" />{t.due}</td>
+                  <td className="px-5 py-3.5">
+                    <Badge tone={t.status === "Completed" ? "success" : t.status === "Overdue" ? "warning" : t.status === "In Progress" ? "info" : "default"}>{t.status}</Badge>
+                  </td>
+                  <td className="px-5 py-3.5 text-muted-foreground"><Clock className="mr-1 inline h-3.5 w-3.5" />{t.due || "—"}</td>
+                  <td className="px-5 py-3.5 text-right">
+                    {canEdit && (
+                      <button onClick={() => onDelete(t.id)} title="Delete" className="glass grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:text-rose-300">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </td>
                 </tr>
               );
             })}
@@ -137,12 +188,12 @@ function ListView() {
   );
 }
 
-function BoardView() {
+function BoardView({ tasks }: { tasks: Task[] }) {
   const cols: Status[] = ["Pending", "In Progress", "Completed", "Overdue"];
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
       {cols.map((col) => {
-        const items = TASKS.filter((t) => t.status === col);
+        const items = tasks.filter((t) => t.status === col);
         const S = statusIcon[col];
         return (
           <div key={col} className="glass rounded-2xl p-4">
@@ -160,8 +211,8 @@ function BoardView() {
                   <div className="flex items-center justify-between">
                     <Badge tone={priorityTone[t.priority]}><Flag className="mr-1 inline h-3 w-3" />{t.priority}</Badge>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />{t.due.slice(5)}
-                      <Avatar name={t.assignee} tone={t.tone} />
+                      <Clock className="h-3 w-3" />{t.due.slice(5) || "—"}
+                      <Avatar name={t.assignee || "—"} tone={t.tone} />
                     </div>
                   </div>
                 </div>
@@ -175,10 +226,9 @@ function BoardView() {
   );
 }
 
-function CalendarView() {
-  // July 2026 (starts Wed)
+function CalendarView({ tasks }: { tasks: Task[] }) {
   const days = 31;
-  const startOffset = 3; // Wed
+  const startOffset = 3;
   const cells = useMemo(() => {
     const arr: (number | null)[] = [];
     for (let i = 0; i < startOffset; i++) arr.push(null);
@@ -204,7 +254,7 @@ function CalendarView() {
       <div className="grid grid-cols-7 gap-1">
         {cells.map((d, i) => {
           const dateStr = d != null ? `2026-07-${String(d).padStart(2, "0")}` : null;
-          const dayTasks = dateStr ? TASKS.filter((t) => t.due === dateStr) : [];
+          const dayTasks = dateStr ? tasks.filter((t) => t.due === dateStr) : [];
           return (
             <div
               key={i}
@@ -230,5 +280,39 @@ function CalendarView() {
         })}
       </div>
     </GlassCard>
+  );
+}
+
+function TaskModal({ open, onClose, onSave }: { open: boolean; onClose: () => void; onSave: (f: FormState) => void }) {
+  const [form, setForm] = useState<FormState>(EMPTY);
+  useEffect(() => { if (open) setForm(EMPTY); }, [open]);
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="New task"
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => { if (!form.title) return; onSave(form); }}>Create task</Button>
+        </>
+      }
+    >
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <FormField label="Title"><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Follow up with…" /></FormField>
+        <FormField label="Assignee"><Input value={form.assignee} onChange={(e) => setForm({ ...form, assignee: e.target.value })} placeholder="Ava" /></FormField>
+        <FormField label="Priority">
+          <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value as Priority })} className="glass h-10 w-full rounded-lg border-0 px-3 text-sm outline-none focus:ring-2 focus:ring-[color:var(--ring)]">
+            {(["High", "Medium", "Low"] as const).map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
+        </FormField>
+        <FormField label="Status">
+          <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as Status })} className="glass h-10 w-full rounded-lg border-0 px-3 text-sm outline-none focus:ring-2 focus:ring-[color:var(--ring)]">
+            {(["Pending", "In Progress", "Completed", "Overdue"] as const).map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </FormField>
+        <FormField label="Due date"><Input type="date" value={form.due} onChange={(e) => setForm({ ...form, due: e.target.value })} /></FormField>
+      </div>
+    </Modal>
   );
 }

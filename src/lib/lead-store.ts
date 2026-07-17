@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 
 const KEY = "uniquecrm-leads-added";
 
+export type Source = "Website" | "Referral" | "LinkedIn" | "Cold call" | "Event" | "Other";
+
 export type StoredLead = {
   id: string;
   name: string;
@@ -10,6 +12,7 @@ export type StoredLead = {
   phone: string;
   status: "New" | "Contacted" | "Qualified" | "Proposal" | "Won" | "Lost";
   priority: "High" | "Medium" | "Low";
+  source: Source;
   owner: string;
   created: string;
 };
@@ -36,6 +39,7 @@ function write(list: StoredLead[]) {
 export function useLeadStore(): {
   added: StoredLead[];
   add: (l: Omit<StoredLead, "id" | "created">) => StoredLead;
+  update: (id: string, patch: Partial<StoredLead>) => void;
   remove: (id: string) => void;
 } {
   const [added, setAdded] = useState<StoredLead[]>([]);
@@ -61,10 +65,15 @@ export function useLeadStore(): {
     setAdded(next);
     return lead;
   };
+  const update = (id: string, patch: Partial<StoredLead>) => {
+    const next = read().map((l) => (l.id === id ? { ...l, ...patch } : l));
+    write(next);
+    setAdded(next);
+  };
   const remove = (id: string) => {
     const next = read().filter((l) => l.id !== id);
     write(next);
     setAdded(next);
   };
-  return { added, add, remove };
+  return { added, add, update, remove };
 }

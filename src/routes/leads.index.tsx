@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Plus,
   Upload,
@@ -12,6 +12,7 @@ import {
   Mail,
   Phone,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import { PageHeader, GlassCard, Badge, Avatar } from "@/components/crm-ui";
 import { Modal, Button, FormField, Input } from "@/components/ui-kit";
@@ -45,6 +46,9 @@ const priorityTone: Record<Priority, "warning" | "info" | "default"> = {
   Low: "default",
 };
 
+type Source = "Website" | "Referral" | "LinkedIn" | "Cold call" | "Event" | "Other";
+const SOURCES: Source[] = ["Website", "Referral", "LinkedIn", "Cold call", "Event", "Other"];
+
 type Lead = {
   id: string;
   name: string;
@@ -53,23 +57,24 @@ type Lead = {
   phone: string;
   status: Status;
   priority: Priority;
+  source: Source;
   owner: string;
   created: string;
 };
 
 const allLeads: Lead[] = [
-  { id: "L-1042", name: "Priya Nair", company: "Northwind", email: "priya@northwind.co", phone: "+1 555-872-1109", status: "Qualified", priority: "High", owner: "Ava Chen", created: "Aug 12, 2026" },
-  { id: "L-1041", name: "Michael Chen", company: "Globex", email: "m.chen@globex.io", phone: "+1 555-019-4432", status: "Proposal", priority: "High", owner: "Sofia Reyes", created: "Aug 11, 2026" },
-  { id: "L-1040", name: "James O'Brien", company: "Stark Industries", email: "james@stark.io", phone: "+1 555-442-9921", status: "Contacted", priority: "Medium", owner: "Ava Chen", created: "Aug 10, 2026" },
-  { id: "L-1039", name: "Aiko Tanaka", company: "Wayne Enterprises", email: "aiko@wayneenterprises.jp", phone: "+81 3-5555-2211", status: "New", priority: "Medium", owner: "Noah Kim", created: "Aug 9, 2026" },
-  { id: "L-1038", name: "Lucas Meyer", company: "Hooli", email: "l.meyer@hooli.com", phone: "+1 555-128-3390", status: "Contacted", priority: "Low", owner: "Liam Patel", created: "Aug 8, 2026" },
-  { id: "L-1037", name: "Emma Wilson", company: "Umbrella Co.", email: "emma@umbrella.co", phone: "+1 555-331-8890", status: "Qualified", priority: "High", owner: "Sofia Reyes", created: "Aug 7, 2026" },
-  { id: "L-1036", name: "Diego Alvarez", company: "Initech", email: "diego@initech.dev", phone: "+1 555-662-4477", status: "Won", priority: "Medium", owner: "Noah Kim", created: "Aug 6, 2026" },
-  { id: "L-1035", name: "Sarah Johnson", company: "Acme Corp", email: "sarah@acmecorp.com", phone: "+1 555-010-2842", status: "Proposal", priority: "High", owner: "Ava Chen", created: "Aug 5, 2026" },
-  { id: "L-1034", name: "Rahul Desai", company: "Vandelay", email: "rahul@vandelay.co", phone: "+1 555-882-1104", status: "New", priority: "Low", owner: "Liam Patel", created: "Aug 4, 2026" },
-  { id: "L-1033", name: "Yara Haddad", company: "Massive Dynamic", email: "yara@massivedynamic.com", phone: "+1 555-773-9084", status: "Lost", priority: "Low", owner: "Sofia Reyes", created: "Aug 3, 2026" },
-  { id: "L-1032", name: "Oliver Grant", company: "Pied Piper", email: "oliver@piedpiper.io", phone: "+1 555-224-8811", status: "Qualified", priority: "Medium", owner: "Noah Kim", created: "Aug 2, 2026" },
-  { id: "L-1031", name: "Chen Wei", company: "Cyberdyne", email: "chen@cyberdyne.ai", phone: "+1 555-661-2038", status: "Contacted", priority: "High", owner: "Ava Chen", created: "Aug 1, 2026" },
+  { id: "L-1042", name: "Priya Nair", company: "Northwind", email: "priya@northwind.co", phone: "+1 555-872-1109", status: "Qualified", priority: "High", source: "Referral", owner: "Ava Chen", created: "Aug 12, 2026" },
+  { id: "L-1041", name: "Michael Chen", company: "Globex", email: "m.chen@globex.io", phone: "+1 555-019-4432", status: "Proposal", priority: "High", source: "LinkedIn", owner: "Sofia Reyes", created: "Aug 11, 2026" },
+  { id: "L-1040", name: "James O'Brien", company: "Stark Industries", email: "james@stark.io", phone: "+1 555-442-9921", status: "Contacted", priority: "Medium", source: "Event", owner: "Ava Chen", created: "Aug 10, 2026" },
+  { id: "L-1039", name: "Aiko Tanaka", company: "Wayne Enterprises", email: "aiko@wayneenterprises.jp", phone: "+81 3-5555-2211", status: "New", priority: "Medium", source: "Website", owner: "Noah Kim", created: "Aug 9, 2026" },
+  { id: "L-1038", name: "Lucas Meyer", company: "Hooli", email: "l.meyer@hooli.com", phone: "+1 555-128-3390", status: "Contacted", priority: "Low", source: "Cold call", owner: "Liam Patel", created: "Aug 8, 2026" },
+  { id: "L-1037", name: "Emma Wilson", company: "Umbrella Co.", email: "emma@umbrella.co", phone: "+1 555-331-8890", status: "Qualified", priority: "High", source: "Website", owner: "Sofia Reyes", created: "Aug 7, 2026" },
+  { id: "L-1036", name: "Diego Alvarez", company: "Initech", email: "diego@initech.dev", phone: "+1 555-662-4477", status: "Won", priority: "Medium", source: "Referral", owner: "Noah Kim", created: "Aug 6, 2026" },
+  { id: "L-1035", name: "Sarah Johnson", company: "Acme Corp", email: "sarah@acmecorp.com", phone: "+1 555-010-2842", status: "Proposal", priority: "High", source: "LinkedIn", owner: "Ava Chen", created: "Aug 5, 2026" },
+  { id: "L-1034", name: "Rahul Desai", company: "Vandelay", email: "rahul@vandelay.co", phone: "+1 555-882-1104", status: "New", priority: "Low", source: "Website", owner: "Liam Patel", created: "Aug 4, 2026" },
+  { id: "L-1033", name: "Yara Haddad", company: "Massive Dynamic", email: "yara@massivedynamic.com", phone: "+1 555-773-9084", status: "Lost", priority: "Low", source: "Event", owner: "Sofia Reyes", created: "Aug 3, 2026" },
+  { id: "L-1032", name: "Oliver Grant", company: "Pied Piper", email: "oliver@piedpiper.io", phone: "+1 555-224-8811", status: "Qualified", priority: "Medium", source: "Referral", owner: "Noah Kim", created: "Aug 2, 2026" },
+  { id: "L-1031", name: "Chen Wei", company: "Cyberdyne", email: "chen@cyberdyne.ai", phone: "+1 555-661-2038", status: "Contacted", priority: "High", source: "LinkedIn", owner: "Ava Chen", created: "Aug 1, 2026" },
 ];
 
 const PAGE_SIZE = 8;
@@ -77,9 +82,11 @@ const PAGE_SIZE = 8;
 function LeadsPage() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<Status | "All">("All");
+  const [source, setSource] = useState<Source | "All">("All");
   const [page, setPage] = useState(1);
   const [addOpen, setAddOpen] = useState(false);
-  const { added, add, remove } = useLeadStore();
+  const [editing, setEditing] = useState<StoredLead | null>(null);
+  const { added, add, update, remove } = useLeadStore();
 
   const combined = useMemo<Lead[]>(() => [...added as Lead[], ...allLeads], [added]);
 
@@ -88,12 +95,13 @@ function LeadsPage() {
     return combined.filter(
       (l) =>
         (status === "All" || l.status === status) &&
+        (source === "All" || l.source === source) &&
         (q === "" ||
           l.name.toLowerCase().includes(q) ||
           l.company.toLowerCase().includes(q) ||
           l.email.toLowerCase().includes(q)),
     );
-  }, [query, status, combined]);
+  }, [query, status, source, combined]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageSafe = Math.min(page, totalPages);
@@ -157,6 +165,15 @@ function LeadsPage() {
               className="glass h-10 w-full rounded-lg border-0 pl-10 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-[color:var(--ring)]"
             />
           </div>
+          <select
+            value={source}
+            onChange={(e) => { setSource(e.target.value as Source | "All"); setPage(1); }}
+            className="glass h-10 rounded-lg border-0 px-3 text-sm outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
+            aria-label="Filter by source"
+          >
+            <option value="All">All sources</option>
+            {SOURCES.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
           <button className="glass inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium">
             <Filter className="h-4 w-4" />
             Filters
@@ -223,12 +240,24 @@ function LeadsPage() {
                     <td className="px-3 py-3 text-muted-foreground">{l.email}</td>
                     <td className="px-3 py-3 text-muted-foreground">{l.phone}</td>
                     <td className="px-3 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full ${tone.bg} ${tone.text} px-2.5 py-0.5 text-[11px] font-medium ring-1 ${tone.ring}`}
-                      >
-                        <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                        {l.status}
-                      </span>
+                      {addedIds.has(l.id) ? (
+                        <select
+                          value={l.status}
+                          onChange={(e) => update(l.id, { status: e.target.value as Status })}
+                          className={`glass h-7 rounded-full border-0 px-2 text-[11px] font-medium outline-none focus:ring-2 focus:ring-[color:var(--ring)] ${tone.text}`}
+                        >
+                          {(["New", "Contacted", "Qualified", "Proposal", "Won", "Lost"] as const).map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full ${tone.bg} ${tone.text} px-2.5 py-0.5 text-[11px] font-medium ring-1 ${tone.ring}`}
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                          {l.status}
+                        </span>
+                      )}
                     </td>
                     <td className="px-3 py-3">
                       <Badge tone={priorityTone[l.priority]}>{l.priority}</Badge>
@@ -249,13 +278,22 @@ function LeadsPage() {
                           <Phone className="h-3.5 w-3.5" />
                         </a>
                         {addedIds.has(l.id) ? (
-                          <button
-                            onClick={() => remove(l.id)}
-                            title="Delete lead"
-                            className="glass grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-rose-300"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                          <>
+                            <button
+                              onClick={() => setEditing(l as unknown as StoredLead)}
+                              title="Edit lead"
+                              className="glass grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-foreground"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => { if (confirm("Delete this lead?")) remove(l.id); }}
+                              title="Delete lead"
+                              className="glass grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-rose-300"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </>
                         ) : (
                           <button className="glass grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-foreground">
                             <MoreHorizontal className="h-3.5 w-3.5" />
@@ -322,78 +360,80 @@ function LeadsPage() {
         </div>
       </GlassCard>
 
-      <AddLeadModal
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        onCreate={(l) => {
-          add(l);
+      <LeadModal
+        open={addOpen || !!editing}
+        editing={editing}
+        onClose={() => { setAddOpen(false); setEditing(null); }}
+        onSave={(l) => {
+          if (editing) {
+            update(editing.id, l);
+          } else {
+            add(l);
+            setPage(1);
+          }
           setAddOpen(false);
-          setPage(1);
+          setEditing(null);
         }}
       />
     </div>
   );
 }
 
-function AddLeadModal({
-  open,
-  onClose,
-  onCreate,
+type LeadForm = Omit<StoredLead, "id" | "created">;
+const EMPTY_FORM: LeadForm = {
+  name: "", company: "", email: "", phone: "",
+  status: "New", priority: "Medium", source: "Website", owner: "Alex N.",
+};
+
+function LeadModal({
+  open, editing, onClose, onSave,
 }: {
   open: boolean;
+  editing: StoredLead | null;
   onClose: () => void;
-  onCreate: (l: Omit<StoredLead, "id" | "created">) => void;
+  onSave: (l: LeadForm) => void;
 }) {
-  const [name, setName] = useState("");
-  const [company, setCompany] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [status, setStatus] = useState<StoredLead["status"]>("New");
-  const [priority, setPriority] = useState<StoredLead["priority"]>("Medium");
-  const [owner, setOwner] = useState("Alex N.");
-
-  const reset = () => {
-    setName(""); setCompany(""); setEmail(""); setPhone("");
-    setStatus("New"); setPriority("Medium"); setOwner("Alex N.");
-  };
+  const [form, setForm] = useState<LeadForm>(EMPTY_FORM);
+  useEffect(() => {
+    if (editing) {
+      const { id: _id, created: _created, ...rest } = editing;
+      setForm(rest);
+    } else {
+      setForm(EMPTY_FORM);
+    }
+  }, [editing, open]);
 
   return (
     <Modal
       open={open}
-      onClose={() => { onClose(); reset(); }}
-      title="Add lead"
+      onClose={onClose}
+      title={editing ? "Edit lead" : "Add lead"}
       footer={
         <>
-          <Button variant="ghost" onClick={() => { onClose(); reset(); }}>Cancel</Button>
-          <Button
-            onClick={() => {
-              if (!name || !email) return;
-              onCreate({ name, company, email, phone, status, priority, owner });
-              reset();
-            }}
-          >
-            Create lead
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => { if (!form.name || !form.email) return; onSave(form); }}>
+            {editing ? "Save changes" : "Create lead"}
           </Button>
         </>
       }
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <FormField label="Full name">
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Jane Doe" />
+          <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Jane Doe" />
         </FormField>
         <FormField label="Company">
-          <Input value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Acme Corp" />
+          <Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} placeholder="Acme Corp" />
         </FormField>
         <FormField label="Email">
-          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jane@acme.co" />
+          <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="jane@acme.co" />
         </FormField>
         <FormField label="Phone">
-          <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 555…" />
+          <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+1 555…" />
         </FormField>
         <FormField label="Status">
           <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value as StoredLead["status"])}
+            value={form.status}
+            onChange={(e) => setForm({ ...form, status: e.target.value as StoredLead["status"] })}
             className="glass h-10 w-full rounded-lg border-0 px-3 text-sm outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
           >
             {(["New", "Contacted", "Qualified", "Proposal", "Won", "Lost"] as const).map((s) => (
@@ -403,8 +443,8 @@ function AddLeadModal({
         </FormField>
         <FormField label="Priority">
           <select
-            value={priority}
-            onChange={(e) => setPriority(e.target.value as StoredLead["priority"])}
+            value={form.priority}
+            onChange={(e) => setForm({ ...form, priority: e.target.value as StoredLead["priority"] })}
             className="glass h-10 w-full rounded-lg border-0 px-3 text-sm outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
           >
             {(["High", "Medium", "Low"] as const).map((p) => (
@@ -412,8 +452,17 @@ function AddLeadModal({
             ))}
           </select>
         </FormField>
+        <FormField label="Source">
+          <select
+            value={form.source}
+            onChange={(e) => setForm({ ...form, source: e.target.value as Source })}
+            className="glass h-10 w-full rounded-lg border-0 px-3 text-sm outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
+          >
+            {SOURCES.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </FormField>
         <FormField label="Owner">
-          <Input value={owner} onChange={(e) => setOwner(e.target.value)} />
+          <Input value={form.owner} onChange={(e) => setForm({ ...form, owner: e.target.value })} />
         </FormField>
       </div>
     </Modal>
