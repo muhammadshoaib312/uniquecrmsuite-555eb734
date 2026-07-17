@@ -314,8 +314,7 @@ function ContactModal({ open, onClose, initial, editing, onSave }: {
   onSave: (v: FormState) => void;
 }) {
   const [form, setForm] = useState<FormState>(initial);
-  // reset when reopened
-  useMemo(() => setForm(initial), [initial]);
+  useEffect(() => { setForm(initial); }, [initial]);
 
   return (
     <Modal
