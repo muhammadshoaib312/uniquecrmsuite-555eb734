@@ -81,9 +81,11 @@ const PAGE_SIZE = 8;
 function LeadsPage() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<Status | "All">("All");
+  const [source, setSource] = useState<Source | "All">("All");
   const [page, setPage] = useState(1);
   const [addOpen, setAddOpen] = useState(false);
-  const { added, add, remove } = useLeadStore();
+  const [editing, setEditing] = useState<StoredLead | null>(null);
+  const { added, add, update, remove } = useLeadStore();
 
   const combined = useMemo<Lead[]>(() => [...added as Lead[], ...allLeads], [added]);
 
@@ -92,12 +94,13 @@ function LeadsPage() {
     return combined.filter(
       (l) =>
         (status === "All" || l.status === status) &&
+        (source === "All" || l.source === source) &&
         (q === "" ||
           l.name.toLowerCase().includes(q) ||
           l.company.toLowerCase().includes(q) ||
           l.email.toLowerCase().includes(q)),
     );
-  }, [query, status, combined]);
+  }, [query, status, source, combined]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageSafe = Math.min(page, totalPages);
