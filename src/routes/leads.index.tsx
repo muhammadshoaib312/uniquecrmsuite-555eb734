@@ -164,6 +164,15 @@ function LeadsPage() {
               className="glass h-10 w-full rounded-lg border-0 pl-10 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-[color:var(--ring)]"
             />
           </div>
+          <select
+            value={source}
+            onChange={(e) => { setSource(e.target.value as Source | "All"); setPage(1); }}
+            className="glass h-10 rounded-lg border-0 px-3 text-sm outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
+            aria-label="Filter by source"
+          >
+            <option value="All">All sources</option>
+            {SOURCES.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
           <button className="glass inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium">
             <Filter className="h-4 w-4" />
             Filters
