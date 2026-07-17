@@ -240,12 +240,24 @@ function LeadsPage() {
                     <td className="px-3 py-3 text-muted-foreground">{l.email}</td>
                     <td className="px-3 py-3 text-muted-foreground">{l.phone}</td>
                     <td className="px-3 py-3">
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full ${tone.bg} ${tone.text} px-2.5 py-0.5 text-[11px] font-medium ring-1 ${tone.ring}`}
-                      >
-                        <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                        {l.status}
-                      </span>
+                      {addedIds.has(l.id) ? (
+                        <select
+                          value={l.status}
+                          onChange={(e) => update(l.id, { status: e.target.value as Status })}
+                          className={`glass h-7 rounded-full border-0 px-2 text-[11px] font-medium outline-none focus:ring-2 focus:ring-[color:var(--ring)] ${tone.text}`}
+                        >
+                          {(["New", "Contacted", "Qualified", "Proposal", "Won", "Lost"] as const).map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full ${tone.bg} ${tone.text} px-2.5 py-0.5 text-[11px] font-medium ring-1 ${tone.ring}`}
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                          {l.status}
+                        </span>
+                      )}
                     </td>
                     <td className="px-3 py-3">
                       <Badge tone={priorityTone[l.priority]}>{l.priority}</Badge>
@@ -266,13 +278,22 @@ function LeadsPage() {
                           <Phone className="h-3.5 w-3.5" />
                         </a>
                         {addedIds.has(l.id) ? (
-                          <button
-                            onClick={() => remove(l.id)}
-                            title="Delete lead"
-                            className="glass grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-rose-300"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                          <>
+                            <button
+                              onClick={() => setEditing(l as unknown as StoredLead)}
+                              title="Edit lead"
+                              className="glass grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-foreground"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => { if (confirm("Delete this lead?")) remove(l.id); }}
+                              title="Delete lead"
+                              className="glass grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-rose-300"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </>
                         ) : (
                           <button className="glass grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-foreground">
                             <MoreHorizontal className="h-3.5 w-3.5" />
