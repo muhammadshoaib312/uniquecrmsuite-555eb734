@@ -12,6 +12,7 @@ import {
   Mail,
   Phone,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import { PageHeader, GlassCard, Badge, Avatar } from "@/components/crm-ui";
 import { Modal, Button, FormField, Input } from "@/components/ui-kit";
