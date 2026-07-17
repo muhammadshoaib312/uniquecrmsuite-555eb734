@@ -2,9 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   Search, Filter, Plus, LayoutGrid, Table as TableIcon,
-  Mail, Phone, MoreHorizontal, Star, Download,
+  Mail, Phone, MoreHorizontal, Star, Download, Trash2, Pencil,
 } from "lucide-react";
 import { PageHeader, GlassCard, Badge, Avatar } from "@/components/crm-ui";
+import { Modal, Button, FormField, Input } from "@/components/ui-kit";
+import { useRecordStore } from "@/lib/record-store";
 
 export const Route = createFileRoute("/contacts")({
   head: () => ({
@@ -23,20 +25,22 @@ type Contact = {
   company: string;
   email: string;
   phone: string;
+  jobTitle?: string;
   status: Status;
   tags: string[];
+  lastActivity?: string;
   tone: number;
 };
 
-const CONTACTS: Contact[] = [
-  { id: "1", name: "Ava Reynolds", company: "Northwind Labs", email: "ava@northwind.io", phone: "+1 (415) 555-2201", status: "VIP", tags: ["Enterprise", "Priority"], tone: 0 },
-  { id: "2", name: "Marcus Chen", company: "Lumen Studios", email: "marcus@lumen.co", phone: "+1 (628) 555-9911", status: "Active", tags: ["Design", "Retainer"], tone: 1 },
-  { id: "3", name: "Priya Natarajan", company: "Halcyon Systems", email: "priya@halcyon.dev", phone: "+91 98765 12345", status: "Lead", tags: ["Warm", "SaaS"], tone: 2 },
-  { id: "4", name: "Diego Alvarez", company: "Meridian & Co", email: "diego@meridian.com", phone: "+34 611 22 33 44", status: "Active", tags: ["Finance"], tone: 3 },
-  { id: "5", name: "Sofia Petrov", company: "Aster Health", email: "sofia@aster.health", phone: "+44 20 7946 0011", status: "Inactive", tags: ["Healthcare"], tone: 4 },
-  { id: "6", name: "Jamal Turner", company: "Arcadia Media", email: "jamal@arcadia.tv", phone: "+1 (312) 555-6688", status: "VIP", tags: ["Media", "Priority"], tone: 0 },
-  { id: "7", name: "Elena Rossi", company: "Volta Motors", email: "elena@volta.eu", phone: "+39 02 1234 5678", status: "Active", tags: ["Automotive"], tone: 1 },
-  { id: "8", name: "Kenji Watanabe", company: "Origami Cloud", email: "kenji@origami.io", phone: "+81 3 5678 9012", status: "Lead", tags: ["Cloud", "Trial"], tone: 2 },
+const STATIC_CONTACTS: Contact[] = [
+  { id: "c1", name: "Ava Reynolds", company: "Northwind Labs", email: "ava@northwind.io", phone: "+1 (415) 555-2201", jobTitle: "VP Sales", status: "VIP", tags: ["Enterprise", "Priority"], lastActivity: "2h ago", tone: 0 },
+  { id: "c2", name: "Marcus Chen", company: "Lumen Studios", email: "marcus@lumen.co", phone: "+1 (628) 555-9911", jobTitle: "Creative Director", status: "Active", tags: ["Design", "Retainer"], lastActivity: "Yesterday", tone: 1 },
+  { id: "c3", name: "Priya Natarajan", company: "Halcyon Systems", email: "priya@halcyon.dev", phone: "+91 98765 12345", jobTitle: "CTO", status: "Lead", tags: ["Warm", "SaaS"], lastActivity: "3d ago", tone: 2 },
+  { id: "c4", name: "Diego Alvarez", company: "Meridian & Co", email: "diego@meridian.com", phone: "+34 611 22 33 44", jobTitle: "Finance Lead", status: "Active", tags: ["Finance"], lastActivity: "1w ago", tone: 3 },
+  { id: "c5", name: "Sofia Petrov", company: "Aster Health", email: "sofia@aster.health", phone: "+44 20 7946 0011", jobTitle: "Ops Manager", status: "Inactive", tags: ["Healthcare"], lastActivity: "3w ago", tone: 4 },
+  { id: "c6", name: "Jamal Turner", company: "Arcadia Media", email: "jamal@arcadia.tv", phone: "+1 (312) 555-6688", jobTitle: "Head of Growth", status: "VIP", tags: ["Media", "Priority"], lastActivity: "5h ago", tone: 0 },
+  { id: "c7", name: "Elena Rossi", company: "Volta Motors", email: "elena@volta.eu", phone: "+39 02 1234 5678", jobTitle: "Product Lead", status: "Active", tags: ["Automotive"], lastActivity: "2d ago", tone: 1 },
+  { id: "c8", name: "Kenji Watanabe", company: "Origami Cloud", email: "kenji@origami.io", phone: "+81 3 5678 9012", jobTitle: "Founder", status: "Lead", tags: ["Cloud", "Trial"], lastActivity: "6d ago", tone: 2 },
 ];
 
 const statusTone: Record<Status, "success" | "warning" | "info" | "brand"> = {
@@ -46,13 +50,22 @@ const statusTone: Record<Status, "success" | "warning" | "info" | "brand"> = {
   VIP: "brand",
 };
 
+type FormState = Omit<Contact, "id" | "tone">;
+const EMPTY: FormState = { name: "", company: "", email: "", phone: "", jobTitle: "", status: "Lead", tags: [], lastActivity: "just now" };
+
 function ContactsPage() {
   const [view, setView] = useState<"table" | "card">("table");
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<Status | "All">("All");
+  const { items: added, add, update, remove } = useRecordStore<Contact>("contacts");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Contact | null>(null);
+
+  const combined: Contact[] = useMemo(() => [...added, ...STATIC_CONTACTS], [added]);
+  const addedIds = new Set(added.map((c) => c.id));
 
   const filtered = useMemo(() => {
-    return CONTACTS.filter((c) => {
+    return combined.filter((c) => {
       const q = query.trim().toLowerCase();
       const matchQ =
         !q ||
@@ -62,19 +75,46 @@ function ContactsPage() {
       const matchS = status === "All" || c.status === status;
       return matchQ && matchS;
     });
-  }, [query, status]);
+  }, [query, status, combined]);
+
+  function handleSave(form: FormState) {
+    if (editing) {
+      update(editing.id, form);
+    } else {
+      add({ ...form, tone: Math.floor(Math.random() * 5) } as Omit<Contact, "id">);
+    }
+    setModalOpen(false);
+    setEditing(null);
+  }
+
+  function handleDelete(id: string) {
+    if (confirm("Delete this contact?")) remove(id);
+  }
+
+  function exportCsv() {
+    const rows = ["name,company,email,phone,jobTitle,status,tags"]
+      .concat(combined.map((c) => [c.name, c.company, c.email, c.phone, c.jobTitle ?? "", c.status, c.tags.join(";")].join(",")));
+    const blob = new Blob([rows.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "contacts.csv"; a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div>
       <PageHeader
         title="Contacts"
-        subtitle="All your people, tagged and searchable."
+        subtitle={`${filtered.length} contacts · tagged and searchable`}
         actions={
           <>
-            <button className="glass hidden items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-white/5 sm:inline-flex">
+            <button onClick={exportCsv} className="glass hidden items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-white/5 sm:inline-flex">
               <Download className="h-4 w-4" /> Export
             </button>
-            <button className="gradient-brand-bg inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white glow-shadow-sm">
+            <button
+              onClick={() => { setEditing(null); setModalOpen(true); }}
+              className="gradient-brand-bg inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white glow-shadow-sm"
+            >
               <Plus className="h-4 w-4" /> Add Contact
             </button>
           </>
@@ -143,8 +183,8 @@ function ContactsPage() {
                   <th className="px-5 py-3 font-medium">Email</th>
                   <th className="px-5 py-3 font-medium">Phone</th>
                   <th className="px-5 py-3 font-medium">Status</th>
-                  <th className="px-5 py-3 font-medium">Tags</th>
-                  <th className="px-5 py-3" />
+                  <th className="px-5 py-3 font-medium">Last activity</th>
+                  <th className="px-5 py-3 text-right font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -155,7 +195,7 @@ function ContactsPage() {
                         <Avatar name={c.name} tone={c.tone} />
                         <div className="min-w-0">
                           <div className="truncate font-medium">{c.name}</div>
-                          <div className="truncate text-xs text-muted-foreground sm:hidden">{c.company}</div>
+                          <div className="truncate text-xs text-muted-foreground">{c.jobTitle}</div>
                         </div>
                       </div>
                     </td>
@@ -163,17 +203,35 @@ function ContactsPage() {
                     <td className="px-5 py-3.5 text-muted-foreground">{c.email}</td>
                     <td className="px-5 py-3.5 text-muted-foreground">{c.phone}</td>
                     <td className="px-5 py-3.5"><Badge tone={statusTone[c.status]}>{c.status}</Badge></td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex flex-wrap gap-1">
-                        {c.tags.map((t) => (
-                          <Badge key={t}>{t}</Badge>
-                        ))}
-                      </div>
-                    </td>
+                    <td className="px-5 py-3.5 text-muted-foreground">{c.lastActivity ?? "—"}</td>
                     <td className="px-5 py-3.5 text-right">
-                      <button className="rounded-lg p-1.5 text-muted-foreground hover:bg-white/5 hover:text-foreground">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </button>
+                      <div className="flex justify-end gap-1">
+                        <a href={`mailto:${c.email}`} title="Email" className="glass grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-foreground">
+                          <Mail className="h-3.5 w-3.5" />
+                        </a>
+                        {addedIds.has(c.id) ? (
+                          <>
+                            <button
+                              onClick={() => { setEditing(c); setModalOpen(true); }}
+                              title="Edit"
+                              className="glass grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-foreground"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(c.id)}
+                              title="Delete"
+                              className="glass grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-rose-300"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </>
+                        ) : (
+                          <button className="rounded-lg p-1.5 text-muted-foreground hover:bg-white/5 hover:text-foreground">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -215,8 +273,14 @@ function ContactsPage() {
                   {c.tags.slice(0, 2).map((t) => <Badge key={t}>{t}</Badge>)}
                 </div>
                 <div className="flex gap-1">
-                  <button className="glass rounded-lg p-1.5 hover:glow-shadow-sm"><Mail className="h-3.5 w-3.5" /></button>
-                  <button className="glass rounded-lg p-1.5 hover:glow-shadow-sm"><Phone className="h-3.5 w-3.5" /></button>
+                  {addedIds.has(c.id) && (
+                    <>
+                      <button onClick={() => { setEditing(c); setModalOpen(true); }} className="glass rounded-lg p-1.5 hover:glow-shadow-sm"><Pencil className="h-3.5 w-3.5" /></button>
+                      <button onClick={() => handleDelete(c.id)} className="glass rounded-lg p-1.5 hover:glow-shadow-sm"><Trash2 className="h-3.5 w-3.5" /></button>
+                    </>
+                  )}
+                  <a href={`mailto:${c.email}`} className="glass rounded-lg p-1.5 hover:glow-shadow-sm"><Mail className="h-3.5 w-3.5" /></a>
+                  <a href={`tel:${c.phone}`} className="glass rounded-lg p-1.5 hover:glow-shadow-sm"><Phone className="h-3.5 w-3.5" /></a>
                 </div>
               </div>
             </div>
@@ -229,6 +293,64 @@ function ContactsPage() {
           No contacts match your filters.
         </div>
       )}
+
+      <ContactModal
+        open={modalOpen}
+        onClose={() => { setModalOpen(false); setEditing(null); }}
+        initial={editing ? { name: editing.name, company: editing.company, email: editing.email, phone: editing.phone, jobTitle: editing.jobTitle ?? "", status: editing.status, tags: editing.tags, lastActivity: editing.lastActivity } : EMPTY}
+        editing={!!editing}
+        onSave={handleSave}
+      />
     </div>
+  );
+}
+
+function ContactModal({ open, onClose, initial, editing, onSave }: {
+  open: boolean;
+  onClose: () => void;
+  initial: FormState;
+  editing: boolean;
+  onSave: (v: FormState) => void;
+}) {
+  const [form, setForm] = useState<FormState>(initial);
+  // reset when reopened
+  useMemo(() => setForm(initial), [initial]);
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={editing ? "Edit contact" : "Add contact"}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button
+            onClick={() => {
+              if (!form.name || !form.email) return;
+              onSave(form);
+            }}
+          >
+            {editing ? "Save changes" : "Create contact"}
+          </Button>
+        </>
+      }
+    >
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <FormField label="Full name"><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Jane Doe" /></FormField>
+        <FormField label="Company"><Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} placeholder="Acme Corp" /></FormField>
+        <FormField label="Email"><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="jane@acme.co" /></FormField>
+        <FormField label="Phone"><Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+1 555…" /></FormField>
+        <FormField label="Job title"><Input value={form.jobTitle} onChange={(e) => setForm({ ...form, jobTitle: e.target.value })} placeholder="Head of Sales" /></FormField>
+        <FormField label="Status">
+          <select
+            value={form.status}
+            onChange={(e) => setForm({ ...form, status: e.target.value as Status })}
+            className="glass h-10 w-full rounded-lg border-0 px-3 text-sm outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
+          >
+            {(["Active", "Lead", "VIP", "Inactive"] as const).map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </FormField>
+      </div>
+    </Modal>
   );
 }
