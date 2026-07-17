@@ -45,6 +45,9 @@ const priorityTone: Record<Priority, "warning" | "info" | "default"> = {
   Low: "default",
 };
 
+type Source = "Website" | "Referral" | "LinkedIn" | "Cold call" | "Event" | "Other";
+const SOURCES: Source[] = ["Website", "Referral", "LinkedIn", "Cold call", "Event", "Other"];
+
 type Lead = {
   id: string;
   name: string;
@@ -53,23 +56,24 @@ type Lead = {
   phone: string;
   status: Status;
   priority: Priority;
+  source: Source;
   owner: string;
   created: string;
 };
 
 const allLeads: Lead[] = [
-  { id: "L-1042", name: "Priya Nair", company: "Northwind", email: "priya@northwind.co", phone: "+1 555-872-1109", status: "Qualified", priority: "High", owner: "Ava Chen", created: "Aug 12, 2026" },
-  { id: "L-1041", name: "Michael Chen", company: "Globex", email: "m.chen@globex.io", phone: "+1 555-019-4432", status: "Proposal", priority: "High", owner: "Sofia Reyes", created: "Aug 11, 2026" },
-  { id: "L-1040", name: "James O'Brien", company: "Stark Industries", email: "james@stark.io", phone: "+1 555-442-9921", status: "Contacted", priority: "Medium", owner: "Ava Chen", created: "Aug 10, 2026" },
-  { id: "L-1039", name: "Aiko Tanaka", company: "Wayne Enterprises", email: "aiko@wayneenterprises.jp", phone: "+81 3-5555-2211", status: "New", priority: "Medium", owner: "Noah Kim", created: "Aug 9, 2026" },
-  { id: "L-1038", name: "Lucas Meyer", company: "Hooli", email: "l.meyer@hooli.com", phone: "+1 555-128-3390", status: "Contacted", priority: "Low", owner: "Liam Patel", created: "Aug 8, 2026" },
-  { id: "L-1037", name: "Emma Wilson", company: "Umbrella Co.", email: "emma@umbrella.co", phone: "+1 555-331-8890", status: "Qualified", priority: "High", owner: "Sofia Reyes", created: "Aug 7, 2026" },
-  { id: "L-1036", name: "Diego Alvarez", company: "Initech", email: "diego@initech.dev", phone: "+1 555-662-4477", status: "Won", priority: "Medium", owner: "Noah Kim", created: "Aug 6, 2026" },
-  { id: "L-1035", name: "Sarah Johnson", company: "Acme Corp", email: "sarah@acmecorp.com", phone: "+1 555-010-2842", status: "Proposal", priority: "High", owner: "Ava Chen", created: "Aug 5, 2026" },
-  { id: "L-1034", name: "Rahul Desai", company: "Vandelay", email: "rahul@vandelay.co", phone: "+1 555-882-1104", status: "New", priority: "Low", owner: "Liam Patel", created: "Aug 4, 2026" },
-  { id: "L-1033", name: "Yara Haddad", company: "Massive Dynamic", email: "yara@massivedynamic.com", phone: "+1 555-773-9084", status: "Lost", priority: "Low", owner: "Sofia Reyes", created: "Aug 3, 2026" },
-  { id: "L-1032", name: "Oliver Grant", company: "Pied Piper", email: "oliver@piedpiper.io", phone: "+1 555-224-8811", status: "Qualified", priority: "Medium", owner: "Noah Kim", created: "Aug 2, 2026" },
-  { id: "L-1031", name: "Chen Wei", company: "Cyberdyne", email: "chen@cyberdyne.ai", phone: "+1 555-661-2038", status: "Contacted", priority: "High", owner: "Ava Chen", created: "Aug 1, 2026" },
+  { id: "L-1042", name: "Priya Nair", company: "Northwind", email: "priya@northwind.co", phone: "+1 555-872-1109", status: "Qualified", priority: "High", source: "Referral", owner: "Ava Chen", created: "Aug 12, 2026" },
+  { id: "L-1041", name: "Michael Chen", company: "Globex", email: "m.chen@globex.io", phone: "+1 555-019-4432", status: "Proposal", priority: "High", source: "LinkedIn", owner: "Sofia Reyes", created: "Aug 11, 2026" },
+  { id: "L-1040", name: "James O'Brien", company: "Stark Industries", email: "james@stark.io", phone: "+1 555-442-9921", status: "Contacted", priority: "Medium", source: "Event", owner: "Ava Chen", created: "Aug 10, 2026" },
+  { id: "L-1039", name: "Aiko Tanaka", company: "Wayne Enterprises", email: "aiko@wayneenterprises.jp", phone: "+81 3-5555-2211", status: "New", priority: "Medium", source: "Website", owner: "Noah Kim", created: "Aug 9, 2026" },
+  { id: "L-1038", name: "Lucas Meyer", company: "Hooli", email: "l.meyer@hooli.com", phone: "+1 555-128-3390", status: "Contacted", priority: "Low", source: "Cold call", owner: "Liam Patel", created: "Aug 8, 2026" },
+  { id: "L-1037", name: "Emma Wilson", company: "Umbrella Co.", email: "emma@umbrella.co", phone: "+1 555-331-8890", status: "Qualified", priority: "High", source: "Website", owner: "Sofia Reyes", created: "Aug 7, 2026" },
+  { id: "L-1036", name: "Diego Alvarez", company: "Initech", email: "diego@initech.dev", phone: "+1 555-662-4477", status: "Won", priority: "Medium", source: "Referral", owner: "Noah Kim", created: "Aug 6, 2026" },
+  { id: "L-1035", name: "Sarah Johnson", company: "Acme Corp", email: "sarah@acmecorp.com", phone: "+1 555-010-2842", status: "Proposal", priority: "High", source: "LinkedIn", owner: "Ava Chen", created: "Aug 5, 2026" },
+  { id: "L-1034", name: "Rahul Desai", company: "Vandelay", email: "rahul@vandelay.co", phone: "+1 555-882-1104", status: "New", priority: "Low", source: "Website", owner: "Liam Patel", created: "Aug 4, 2026" },
+  { id: "L-1033", name: "Yara Haddad", company: "Massive Dynamic", email: "yara@massivedynamic.com", phone: "+1 555-773-9084", status: "Lost", priority: "Low", source: "Event", owner: "Sofia Reyes", created: "Aug 3, 2026" },
+  { id: "L-1032", name: "Oliver Grant", company: "Pied Piper", email: "oliver@piedpiper.io", phone: "+1 555-224-8811", status: "Qualified", priority: "Medium", source: "Referral", owner: "Noah Kim", created: "Aug 2, 2026" },
+  { id: "L-1031", name: "Chen Wei", company: "Cyberdyne", email: "chen@cyberdyne.ai", phone: "+1 555-661-2038", status: "Contacted", priority: "High", source: "LinkedIn", owner: "Ava Chen", created: "Aug 1, 2026" },
 ];
 
 const PAGE_SIZE = 8;
