@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Plus, MoreHorizontal, Calendar, DollarSign, Building2, User, Flag, GripVertical } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, MoreHorizontal, Calendar, DollarSign, Building2, Flag, GripVertical, Trash2, Pencil } from "lucide-react";
 import { PageHeader, Avatar } from "@/components/crm-ui";
+import { Modal, Button, FormField, Input } from "@/components/ui-kit";
 
 export const Route = createFileRoute("/deals")({
   head: () => ({
@@ -82,27 +83,45 @@ const initial: Record<Stage, Deal[]> = {
   ],
 };
 
+const STORAGE_KEY = "uniquecrm:deals-board";
+
+type FormState = Omit<Deal, "id"> & { stage: Stage };
+
 function DealsPage() {
-  const [board, setBoard] = useState(initial);
+  const [board, setBoard] = useState<Record<Stage, Deal[]>>(initial);
+  const [hydrated, setHydrated] = useState(false);
   const [dragging, setDragging] = useState<{ id: string; from: Stage } | null>(null);
   const [overStage, setOverStage] = useState<Stage | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<{ deal: Deal; stage: Stage } | null>(null);
+  const [defaultStage, setDefaultStage] = useState<Stage>("New Lead");
+
+  // Hydrate from localStorage
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") setBoard(parsed);
+      }
+    } catch {}
+    setHydrated(true);
+  }, []);
+  useEffect(() => {
+    if (!hydrated) return;
+    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(board)); } catch {}
+  }, [board, hydrated]);
 
   const totalValue = (Object.values(board).flat().reduce((a, d) => a + d.value, 0) / 1000).toFixed(0);
 
-  function onDragStart(id: string, from: Stage) {
-    setDragging({ id, from });
-  }
+  function onDragStart(id: string, from: Stage) { setDragging({ id, from }); }
   function onDragOver(e: React.DragEvent, stage: Stage) {
     e.preventDefault();
     if (overStage !== stage) setOverStage(stage);
   }
   function onDrop(stage: Stage) {
     if (!dragging) return;
-    if (dragging.from === stage) {
-      setDragging(null);
-      setOverStage(null);
-      return;
-    }
+    if (dragging.from === stage) { setDragging(null); setOverStage(null); return; }
     setBoard((prev) => {
       const fromList = prev[dragging.from];
       const card = fromList.find((d) => d.id === dragging.id);
@@ -113,8 +132,31 @@ function DealsPage() {
         [stage]: [card, ...prev[stage]],
       };
     });
-    setDragging(null);
-    setOverStage(null);
+    setDragging(null); setOverStage(null);
+  }
+
+  function handleDelete(id: string, stage: Stage) {
+    if (!confirm("Delete this deal?")) return;
+    setBoard((prev) => ({ ...prev, [stage]: prev[stage].filter((d) => d.id !== id) }));
+  }
+
+  function handleSave(form: FormState) {
+    const { stage, ...rest } = form;
+    if (editing) {
+      // Remove from old stage, insert into new stage
+      setBoard((prev) => {
+        const next: Record<Stage, Deal[]> = { ...prev };
+        next[editing.stage] = next[editing.stage].filter((d) => d.id !== editing.deal.id);
+        const updated: Deal = { ...editing.deal, ...rest };
+        next[stage] = [updated, ...next[stage]];
+        return next;
+      });
+    } else {
+      const id = `d-${Date.now().toString(36)}`;
+      setBoard((prev) => ({ ...prev, [stage]: [{ id, ...rest }, ...prev[stage]] }));
+    }
+    setModalOpen(false);
+    setEditing(null);
   }
 
   return (
@@ -123,7 +165,10 @@ function DealsPage() {
         title="Deals"
         subtitle={`$${totalValue}K across ${stages.length} stages · drag cards to move`}
         actions={
-          <button className="gradient-brand-bg glow-shadow-sm inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white transition-transform hover:scale-[1.02]">
+          <button
+            onClick={() => { setEditing(null); setDefaultStage("New Lead"); setModalOpen(true); }}
+            className="gradient-brand-bg glow-shadow-sm inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
+          >
             <Plus className="h-4 w-4" />
             New deal
           </button>
@@ -163,9 +208,14 @@ function DealsPage() {
                     stage={stage}
                     onDragStart={onDragStart}
                     isDragging={dragging?.id === d.id}
+                    onEdit={() => { setEditing({ deal: d, stage }); setModalOpen(true); }}
+                    onDelete={() => handleDelete(d.id, stage)}
                   />
                 ))}
-                <button className="mt-1 flex items-center justify-center gap-1 rounded-xl border border-dashed border-white/10 py-2 text-xs text-muted-foreground transition hover:border-white/20 hover:text-foreground">
+                <button
+                  onClick={() => { setEditing(null); setDefaultStage(stage); setModalOpen(true); }}
+                  className="mt-1 flex items-center justify-center gap-1 rounded-xl border border-dashed border-white/10 py-2 text-xs text-muted-foreground transition hover:border-white/20 hover:text-foreground"
+                >
                   <Plus className="h-3 w-3" />
                   Add deal
                 </button>
@@ -174,20 +224,29 @@ function DealsPage() {
           );
         })}
       </div>
+
+      <DealModal
+        open={modalOpen}
+        onClose={() => { setModalOpen(false); setEditing(null); }}
+        editing={!!editing}
+        initial={editing
+          ? { ...editing.deal, stage: editing.stage }
+          : { company: "", contact: "", value: 0, priority: "Medium", due: "", stage: defaultStage }}
+        onSave={handleSave}
+      />
     </div>
   );
 }
 
 function DealCard({
-  deal,
-  stage,
-  onDragStart,
-  isDragging,
+  deal, stage, onDragStart, isDragging, onEdit, onDelete,
 }: {
   deal: Deal;
   stage: Stage;
   onDragStart: (id: string, from: Stage) => void;
   isDragging: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
 }) {
   return (
     <div
@@ -228,10 +287,70 @@ function DealCard({
           <Flag className="h-2.5 w-2.5" />
           {deal.priority}
         </span>
-        <button className="rounded p-0.5 text-muted-foreground opacity-0 transition group-hover:opacity-100">
-          <MoreHorizontal className="h-3.5 w-3.5" />
-        </button>
+        <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
+          <button onClick={onEdit} title="Edit" className="rounded p-0.5 text-muted-foreground hover:text-foreground">
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+          <button onClick={onDelete} title="Delete" className="rounded p-0.5 text-muted-foreground hover:text-rose-300">
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+          <button className="rounded p-0.5 text-muted-foreground hover:text-foreground">
+            <MoreHorizontal className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
     </div>
+  );
+}
+
+function DealModal({ open, onClose, initial, editing, onSave }: {
+  open: boolean;
+  onClose: () => void;
+  initial: FormState;
+  editing: boolean;
+  onSave: (v: FormState) => void;
+}) {
+  const [form, setForm] = useState<FormState>(initial);
+  useEffect(() => { setForm(initial); }, [initial]);
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={editing ? "Edit deal" : "New deal"}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => { if (!form.company) return; onSave(form); }}>
+            {editing ? "Save changes" : "Create deal"}
+          </Button>
+        </>
+      }
+    >
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <FormField label="Company"><Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} placeholder="Acme Corp" /></FormField>
+        <FormField label="Primary contact"><Input value={form.contact} onChange={(e) => setForm({ ...form, contact: e.target.value })} placeholder="Jane Doe" /></FormField>
+        <FormField label="Deal value ($)"><Input type="number" value={form.value} onChange={(e) => setForm({ ...form, value: Number(e.target.value) })} /></FormField>
+        <FormField label="Due date"><Input value={form.due} onChange={(e) => setForm({ ...form, due: e.target.value })} placeholder="Aug 24" /></FormField>
+        <FormField label="Priority">
+          <select
+            value={form.priority}
+            onChange={(e) => setForm({ ...form, priority: e.target.value as Priority })}
+            className="glass h-10 w-full rounded-lg border-0 px-3 text-sm outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
+          >
+            {(["High", "Medium", "Low"] as const).map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
+        </FormField>
+        <FormField label="Stage">
+          <select
+            value={form.stage}
+            onChange={(e) => setForm({ ...form, stage: e.target.value as Stage })}
+            className="glass h-10 w-full rounded-lg border-0 px-3 text-sm outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
+          >
+            {stages.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </FormField>
+      </div>
+    </Modal>
   );
 }
