@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   LayoutDashboard,
   UserPlus,
@@ -20,7 +20,6 @@ import {
   Settings,
   Search,
   Bell,
-  Plus,
   Sparkles,
   Bot,
   Workflow,
@@ -29,8 +28,13 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Palette,
+  Command as CommandIcon,
 } from "lucide-react";
-import { ThemeToggle, NotificationPanel, UserMenu } from "@/components/ui-kit";
+import { ThemeToggle, UserMenu } from "@/components/ui-kit";
+import { CommandPalette } from "@/components/command-palette";
+import { NotificationCenter, useNotificationCount } from "@/components/notifications";
+import { QuickCreateMenu } from "@/components/quick-create-menu";
+
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
