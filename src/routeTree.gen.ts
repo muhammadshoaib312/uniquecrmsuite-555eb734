@@ -19,6 +19,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as DesignSystemRouteImport } from './routes/design-system'
 import { Route as DealsRouteImport } from './routes/deals'
 import { Route as ContactsRouteImport } from './routes/contacts'
@@ -82,6 +83,11 @@ const InboxRoute = InboxRouteImport.update({
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocumentsRoute = DocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DesignSystemRoute = DesignSystemRouteImport.update({
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/contacts': typeof ContactsRoute
   '/deals': typeof DealsRoute
   '/design-system': typeof DesignSystemRoute
+  '/documents': typeof DocumentsRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/inbox': typeof InboxRoute
   '/invoices': typeof InvoicesRoute
@@ -193,6 +200,7 @@ export interface FileRoutesByTo {
   '/contacts': typeof ContactsRoute
   '/deals': typeof DealsRoute
   '/design-system': typeof DesignSystemRoute
+  '/documents': typeof DocumentsRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/inbox': typeof InboxRoute
   '/invoices': typeof InvoicesRoute
@@ -220,6 +228,7 @@ export interface FileRoutesById {
   '/contacts': typeof ContactsRoute
   '/deals': typeof DealsRoute
   '/design-system': typeof DesignSystemRoute
+  '/documents': typeof DocumentsRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/inbox': typeof InboxRoute
   '/invoices': typeof InvoicesRoute
@@ -248,6 +257,7 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/deals'
     | '/design-system'
+    | '/documents'
     | '/forgot-password'
     | '/inbox'
     | '/invoices'
@@ -274,6 +284,7 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/deals'
     | '/design-system'
+    | '/documents'
     | '/forgot-password'
     | '/inbox'
     | '/invoices'
@@ -300,6 +311,7 @@ export interface FileRouteTypes {
     | '/contacts'
     | '/deals'
     | '/design-system'
+    | '/documents'
     | '/forgot-password'
     | '/inbox'
     | '/invoices'
@@ -327,6 +339,7 @@ export interface RootRouteChildren {
   ContactsRoute: typeof ContactsRoute
   DealsRoute: typeof DealsRoute
   DesignSystemRoute: typeof DesignSystemRoute
+  DocumentsRoute: typeof DocumentsRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   InboxRoute: typeof InboxRoute
   InvoicesRoute: typeof InvoicesRoute
@@ -414,6 +427,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/documents': {
+      id: '/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof DocumentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/design-system': {
@@ -538,6 +558,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactsRoute: ContactsRoute,
   DealsRoute: DealsRoute,
   DesignSystemRoute: DesignSystemRoute,
+  DocumentsRoute: DocumentsRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   InboxRoute: InboxRoute,
   InvoicesRoute: InvoicesRoute,
