@@ -1,5 +1,5 @@
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   LayoutDashboard,
   UserPlus,
@@ -20,7 +20,6 @@ import {
   Settings,
   Search,
   Bell,
-  Plus,
   Sparkles,
   Bot,
   Workflow,
@@ -29,8 +28,13 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Palette,
+  Command as CommandIcon,
 } from "lucide-react";
-import { ThemeToggle, NotificationPanel, UserMenu } from "@/components/ui-kit";
+import { ThemeToggle, UserMenu } from "@/components/ui-kit";
+import { CommandPalette } from "@/components/command-palette";
+import { NotificationCenter, useNotificationCount } from "@/components/notifications";
+import { QuickCreateMenu } from "@/components/quick-create-menu";
+
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -57,16 +61,33 @@ const nav = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const navigate = useNavigate();
+  
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [searchQ, setSearchQ] = useState("");
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [paletteSeed, setPaletteSeed] = useState("");
+  const unread = useNotificationCount();
+
+  // Global ⌘K / Ctrl+K keyboard shortcut for the command palette.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteSeed("");
+        setPaletteOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // Auth routes render without the shell chrome
   if (pathname === "/login" || pathname === "/signup" || pathname === "/forgot-password") {
     return <>{children}</>;
   }
+
 
   return (
     <div className="relative min-h-screen">
@@ -189,35 +210,22 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Menu className="h-4 w-4" />
             </button>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const q = searchQ.trim();
-                if (!q) return;
-                navigate({ to: "/leads", search: { q } as never });
-              }}
-              className="relative ml-0 hidden max-w-md flex-1 sm:block"
+            <button
+              type="button"
+              onClick={() => { setPaletteSeed(searchQ); setPaletteOpen(true); }}
+              className="glass relative ml-0 hidden h-10 max-w-md flex-1 items-center gap-2 rounded-lg pl-3 pr-2 text-sm text-muted-foreground transition hover:text-foreground sm:flex"
             >
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={searchQ}
-                onChange={(e) => setSearchQ(e.target.value)}
-                placeholder="Search contacts, deals, tasks…"
-                className="glass h-10 w-full rounded-lg border-0 pl-10 pr-4 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-[color:var(--ring)]"
-              />
-              <kbd className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground md:inline-block">
-                ⌘K
+              <Search className="h-4 w-4" />
+              <span className="flex-1 truncate text-left">
+                {searchQ || "Search leads, contacts, deals, tasks…"}
+              </span>
+              <kbd className="hidden items-center gap-1 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium md:inline-flex">
+                <CommandIcon className="h-2.5 w-2.5" />K
               </kbd>
-            </form>
+            </button>
 
             <div className="relative ml-auto flex items-center gap-2">
-              <Link
-                to="/leads"
-                className="gradient-brand-bg glow-shadow-sm hidden items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium text-white transition-transform hover:scale-[1.02] sm:inline-flex"
-              >
-                <Plus className="h-4 w-4" />
-                New
-              </Link>
+              <QuickCreateMenu />
               <ThemeToggle />
               <button
                 onClick={() => setNotifOpen((v) => !v)}
@@ -225,14 +233,25 @@ export function AppShell({ children }: { children: ReactNode }) {
                 aria-label="Notifications"
               >
                 <Bell className="h-4 w-4" />
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[color:var(--brand-pink)] shadow-[0_0_8px_var(--brand-pink)]" />
+                {unread > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-[image:var(--gradient-brand)] px-1 text-[9px] font-bold text-white shadow-[0_0_8px_var(--brand-pink)]">
+                    {unread > 9 ? "9+" : unread}
+                  </span>
+                )}
               </button>
-              <NotificationPanel open={notifOpen} onClose={() => setNotifOpen(false)} />
+              <NotificationCenter open={notifOpen} onClose={() => setNotifOpen(false)} />
               <UserMenu />
             </div>
           </header>
 
+          <CommandPalette
+            open={paletteOpen}
+            onClose={() => setPaletteOpen(false)}
+            initialQuery={paletteSeed}
+          />
+
           <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+
         </div>
       </div>
     </div>

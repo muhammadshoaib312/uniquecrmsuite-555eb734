@@ -4,6 +4,7 @@ import { Plus, FileSpreadsheet, Trash2, Pencil } from "lucide-react";
 import { PageHeader, GlassCard, Badge, StatCard } from "@/components/crm-ui";
 import { Modal, Button, FormField, Input } from "@/components/ui-kit";
 import { useRecordStore } from "@/lib/record-store";
+import { useOpenCreate } from "@/lib/use-open-create";
 
 export const Route = createFileRoute("/quotes")({
   head: () => ({
@@ -32,6 +33,7 @@ function QuotesPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Quote | null>(null);
   const [form, setForm] = useState<Form>(EMPTY);
+  useOpenCreate("quotes", () => { setEditing(null); setForm(EMPTY); setOpen(true); });
   const combined = [...added, ...SEED];
   const addedIds = new Set(added.map((q) => q.id));
 

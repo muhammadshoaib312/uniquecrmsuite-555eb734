@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Plus, MoreHorizontal, Calendar, DollarSign, Building2, Flag, GripVertical, Trash2, Pencil } from "lucide-react";
 import { PageHeader, Avatar } from "@/components/crm-ui";
 import { Modal, Button, FormField, Input } from "@/components/ui-kit";
+import { useOpenCreate } from "@/lib/use-open-create";
 
 export const Route = createFileRoute("/deals")({
   head: () => ({
@@ -95,6 +96,7 @@ function DealsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<{ deal: Deal; stage: Stage } | null>(null);
   const [defaultStage, setDefaultStage] = useState<Stage>("New Lead");
+  useOpenCreate("deals", () => { setEditing(null); setDefaultStage("New Lead"); setModalOpen(true); });
 
   // Hydrate from localStorage
   useEffect(() => {

@@ -17,6 +17,14 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { PageHeader, StatCard, GlassCard, Badge, Avatar } from "@/components/crm-ui";
+import { useDashboardMetrics } from "@/lib/global-index";
+
+const fmtCurrency = (n: number) =>
+  n >= 1_000_000
+    ? `$${(n / 1_000_000).toFixed(1)}M`
+    : n >= 1_000
+      ? `$${(n / 1_000).toFixed(1)}K`
+      : `$${n}`;
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
@@ -54,6 +62,7 @@ const leads = [
 ];
 
 function Dashboard() {
+  const m = useDashboardMetrics();
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
@@ -69,10 +78,10 @@ function Dashboard() {
 
       {/* Top stat cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Leads" value="1,284" delta="+12.7%" icon={<Users className="h-5 w-5" />} />
-        <StatCard label="Active Deals" value="104" delta="+6.4%" icon={<Target className="h-5 w-5" />} />
-        <StatCard label="Revenue (MTD)" value="$284,920" delta="+18.2%" icon={<DollarSign className="h-5 w-5" />} />
-        <StatCard label="Tasks Due Today" value="8" delta="-2.1%" icon={<CheckSquare className="h-5 w-5" />} />
+        <StatCard label="Total Leads" value={m.totalLeads.toLocaleString()} delta={`${m.qualifiedLeads} qualified`} icon={<Users className="h-5 w-5" />} />
+        <StatCard label="Open Deals" value={m.openDeals.toLocaleString()} delta={fmtCurrency(m.pipelineValue) + " in pipeline"} icon={<Target className="h-5 w-5" />} />
+        <StatCard label="Revenue Won" value={fmtCurrency(m.wonValue)} delta="+ all time" icon={<DollarSign className="h-5 w-5" />} />
+        <StatCard label="Tasks Due Today" value={m.tasksDueToday.toString()} delta={`${m.overdueTasks} overdue`} icon={<CheckSquare className="h-5 w-5" />} />
       </div>
 
       {/* Sales Pipeline + Quick Actions */}

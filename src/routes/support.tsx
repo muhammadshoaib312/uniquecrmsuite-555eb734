@@ -4,6 +4,7 @@ import { Plus, LifeBuoy, Trash2 } from "lucide-react";
 import { PageHeader, GlassCard, Badge, StatCard } from "@/components/crm-ui";
 import { Modal, Button, FormField, Input, Textarea } from "@/components/ui-kit";
 import { useRecordStore } from "@/lib/record-store";
+import { useOpenCreate } from "@/lib/use-open-create";
 
 export const Route = createFileRoute("/support")({
   head: () => ({ meta: [{ title: "Support — UniqueCRM" }, { name: "description", content: "Customer support tickets and SLA tracking." }] }),
@@ -29,6 +30,7 @@ function SupportPage() {
   const { items: added, add, update, remove } = useRecordStore<Ticket>("tickets");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Form>(EMPTY);
+  useOpenCreate("tickets", () => { setForm(EMPTY); setOpen(true); });
   const combined = [...added, ...SEED];
   const addedIds = new Set(added.map((t) => t.id));
 

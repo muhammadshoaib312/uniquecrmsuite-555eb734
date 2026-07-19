@@ -7,6 +7,7 @@ import {
 import { PageHeader, GlassCard, Badge, Avatar } from "@/components/crm-ui";
 import { Modal, Button, FormField, Input } from "@/components/ui-kit";
 import { useRecordStore } from "@/lib/record-store";
+import { useOpenCreate } from "@/lib/use-open-create";
 
 export const Route = createFileRoute("/tasks")({
   head: () => ({
@@ -58,6 +59,7 @@ function TasksPage() {
   const [view, setView] = useState<"list" | "board" | "calendar">("list");
   const { items: added, add, update, remove } = useRecordStore<Task>("tasks");
   const [modalOpen, setModalOpen] = useState(false);
+  useOpenCreate("tasks", () => setModalOpen(true));
 
   const combined = useMemo(() => [...added, ...STATIC_TASKS], [added]);
   const addedIds = new Set(added.map((t) => t.id));

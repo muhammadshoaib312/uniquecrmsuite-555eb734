@@ -8,6 +8,7 @@ import {
 import { PageHeader, GlassCard, Badge, Avatar } from "@/components/crm-ui";
 import { Modal, Button, FormField, Input } from "@/components/ui-kit";
 import { useRecordStore } from "@/lib/record-store";
+import { useOpenCreate } from "@/lib/use-open-create";
 
 export const Route = createFileRoute("/contacts")({
   head: () => ({
@@ -61,6 +62,7 @@ function ContactsPage() {
   const { items: added, add, update, remove } = useRecordStore<Contact>("contacts");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Contact | null>(null);
+  useOpenCreate("contacts", () => { setEditing(null); setModalOpen(true); });
 
   const combined: Contact[] = useMemo(() => [...added, ...STATIC_CONTACTS], [added]);
   const addedIds = new Set(added.map((c) => c.id));
