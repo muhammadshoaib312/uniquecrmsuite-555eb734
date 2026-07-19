@@ -2,8 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   Building2, Users, ShieldCheck, Mail, Bell, Palette, Lock, ChevronRight, Check,
+  Database, RotateCcw, Sparkles,
 } from "lucide-react";
 import { PageHeader, GlassCard, Badge, Avatar } from "@/components/crm-ui";
+import { loadDemoData, resetDemoData } from "@/lib/demo-data";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -23,8 +25,10 @@ const SECTIONS = [
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "theme", label: "Theme", icon: Palette },
   { id: "security", label: "Security", icon: Lock },
+  { id: "demo", label: "Demo Data", icon: Database },
 ] as const;
 type SectionId = (typeof SECTIONS)[number]["id"];
+
 
 function SettingsPage() {
   const [active, setActive] = useState<SectionId>("company");
