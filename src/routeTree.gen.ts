@@ -23,6 +23,7 @@ import { Route as DesignSystemRouteImport } from './routes/design-system'
 import { Route as DealsRouteImport } from './routes/deals'
 import { Route as ContactsRouteImport } from './routes/contacts'
 import { Route as CompaniesRouteImport } from './routes/companies'
+import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as ActivitiesRouteImport } from './routes/activities'
 import { Route as IndexRouteImport } from './routes/index'
@@ -103,6 +104,11 @@ const CompaniesRoute = CompaniesRouteImport.update({
   path: '/companies',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CalendarRoute = CalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AnalyticsRoute = AnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -156,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activities': typeof ActivitiesRoute
   '/analytics': typeof AnalyticsRoute
+  '/calendar': typeof CalendarRoute
   '/companies': typeof CompaniesRouteWithChildren
   '/contacts': typeof ContactsRoute
   '/deals': typeof DealsRoute
@@ -181,6 +188,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activities': typeof ActivitiesRoute
   '/analytics': typeof AnalyticsRoute
+  '/calendar': typeof CalendarRoute
   '/companies': typeof CompaniesRouteWithChildren
   '/contacts': typeof ContactsRoute
   '/deals': typeof DealsRoute
@@ -207,6 +215,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/activities': typeof ActivitiesRoute
   '/analytics': typeof AnalyticsRoute
+  '/calendar': typeof CalendarRoute
   '/companies': typeof CompaniesRouteWithChildren
   '/contacts': typeof ContactsRoute
   '/deals': typeof DealsRoute
@@ -234,6 +243,7 @@ export interface FileRouteTypes {
     | '/'
     | '/activities'
     | '/analytics'
+    | '/calendar'
     | '/companies'
     | '/contacts'
     | '/deals'
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
     | '/'
     | '/activities'
     | '/analytics'
+    | '/calendar'
     | '/companies'
     | '/contacts'
     | '/deals'
@@ -284,6 +295,7 @@ export interface FileRouteTypes {
     | '/'
     | '/activities'
     | '/analytics'
+    | '/calendar'
     | '/companies'
     | '/contacts'
     | '/deals'
@@ -310,6 +322,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivitiesRoute: typeof ActivitiesRoute
   AnalyticsRoute: typeof AnalyticsRoute
+  CalendarRoute: typeof CalendarRoute
   CompaniesRoute: typeof CompaniesRouteWithChildren
   ContactsRoute: typeof ContactsRoute
   DealsRoute: typeof DealsRoute
@@ -431,6 +444,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompaniesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/calendar': {
+      id: '/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof CalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/analytics': {
       id: '/analytics'
       path: '/analytics'
@@ -513,6 +533,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivitiesRoute: ActivitiesRoute,
   AnalyticsRoute: AnalyticsRoute,
+  CalendarRoute: CalendarRoute,
   CompaniesRoute: CompaniesRouteWithChildren,
   ContactsRoute: ContactsRoute,
   DealsRoute: DealsRoute,
