@@ -30,6 +30,7 @@ function SupportPage() {
   const { items: added, add, update, remove } = useRecordStore<Ticket>("tickets");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Form>(EMPTY);
+  useOpenCreate("tickets", () => { setForm(EMPTY); setOpen(true); });
   const combined = [...added, ...SEED];
   const addedIds = new Set(added.map((t) => t.id));
 
