@@ -4,6 +4,7 @@ import { Plus, FileSpreadsheet, Trash2, Pencil } from "lucide-react";
 import { PageHeader, GlassCard, Badge, StatCard } from "@/components/crm-ui";
 import { Modal, Button, FormField, Input } from "@/components/ui-kit";
 import { useRecordStore } from "@/lib/record-store";
+import { useOpenCreate } from "@/lib/use-open-create";
 
 export const Route = createFileRoute("/quotes")({
   head: () => ({
