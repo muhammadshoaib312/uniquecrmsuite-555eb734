@@ -33,6 +33,7 @@ function QuotesPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Quote | null>(null);
   const [form, setForm] = useState<Form>(EMPTY);
+  useOpenCreate("quotes", () => { setEditing(null); setForm(EMPTY); setOpen(true); });
   const combined = [...added, ...SEED];
   const addedIds = new Set(added.map((q) => q.id));
 
