@@ -62,6 +62,7 @@ const leads = [
 ];
 
 function Dashboard() {
+  const m = useDashboardMetrics();
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
