@@ -17,6 +17,14 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { PageHeader, StatCard, GlassCard, Badge, Avatar } from "@/components/crm-ui";
+import { useDashboardMetrics } from "@/lib/global-index";
+
+const fmtCurrency = (n: number) =>
+  n >= 1_000_000
+    ? `$${(n / 1_000_000).toFixed(1)}M`
+    : n >= 1_000
+      ? `$${(n / 1_000).toFixed(1)}K`
+      : `$${n}`;
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
