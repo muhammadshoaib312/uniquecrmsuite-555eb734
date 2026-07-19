@@ -4,6 +4,7 @@ import { Plus, Video, Phone, MapPin, Clock, CalendarDays, Trash2 } from "lucide-
 import { PageHeader, GlassCard, Badge, Avatar } from "@/components/crm-ui";
 import { Modal, Button, FormField, Input } from "@/components/ui-kit";
 import { useRecordStore } from "@/lib/record-store";
+import { useOpenCreate } from "@/lib/use-open-create";
 
 export const Route = createFileRoute("/meetings")({
   head: () => ({
