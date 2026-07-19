@@ -96,6 +96,7 @@ function DealsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<{ deal: Deal; stage: Stage } | null>(null);
   const [defaultStage, setDefaultStage] = useState<Stage>("New Lead");
+  useOpenCreate("deals", () => { setEditing(null); setDefaultStage("New Lead"); setModalOpen(true); });
 
   // Hydrate from localStorage
   useEffect(() => {
