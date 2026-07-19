@@ -13,6 +13,7 @@ import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as QuotesRouteImport } from './routes/quotes'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as MeetingsRouteImport } from './routes/meetings'
 import { Route as McpRouteImport } from './routes/mcp'
@@ -55,6 +56,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuotesRoute = QuotesRouteImport.update({
+  id: '/quotes',
+  path: '/quotes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductsRoute = ProductsRouteImport.update({
@@ -194,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/mcp': typeof McpRoute
   '/meetings': typeof MeetingsRoute
   '/products': typeof ProductsRoute
+  '/quotes': typeof QuotesRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
@@ -223,6 +230,7 @@ export interface FileRoutesByTo {
   '/mcp': typeof McpRoute
   '/meetings': typeof MeetingsRoute
   '/products': typeof ProductsRoute
+  '/quotes': typeof QuotesRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
@@ -253,6 +261,7 @@ export interface FileRoutesById {
   '/mcp': typeof McpRoute
   '/meetings': typeof MeetingsRoute
   '/products': typeof ProductsRoute
+  '/quotes': typeof QuotesRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/signup': typeof SignupRoute
@@ -284,6 +293,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/meetings'
     | '/products'
+    | '/quotes'
     | '/reports'
     | '/settings'
     | '/signup'
@@ -313,6 +323,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/meetings'
     | '/products'
+    | '/quotes'
     | '/reports'
     | '/settings'
     | '/signup'
@@ -342,6 +353,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/meetings'
     | '/products'
+    | '/quotes'
     | '/reports'
     | '/settings'
     | '/signup'
@@ -372,6 +384,7 @@ export interface RootRouteChildren {
   McpRoute: typeof McpRoute
   MeetingsRoute: typeof MeetingsRoute
   ProductsRoute: typeof ProductsRoute
+  QuotesRoute: typeof QuotesRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   SignupRoute: typeof SignupRoute
@@ -411,6 +424,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quotes': {
+      id: '/quotes'
+      path: '/quotes'
+      fullPath: '/quotes'
+      preLoaderRoute: typeof QuotesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/products': {
@@ -607,6 +627,7 @@ const rootRouteChildren: RootRouteChildren = {
   McpRoute: McpRoute,
   MeetingsRoute: MeetingsRoute,
   ProductsRoute: ProductsRoute,
+  QuotesRoute: QuotesRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   SignupRoute: SignupRoute,
