@@ -86,6 +86,7 @@ function LeadsPage() {
   const [page, setPage] = useState(1);
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<StoredLead | null>(null);
+  useOpenCreate("leads", () => { setEditing(null); setAddOpen(true); });
   const { added, add, update, remove } = useLeadStore();
 
   const combined = useMemo<Lead[]>(() => [...added as Lead[], ...allLeads], [added]);
