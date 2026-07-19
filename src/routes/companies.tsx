@@ -49,6 +49,7 @@ function CompaniesPage() {
   const { items: added, add, update, remove } = useRecordStore<Company>("companies");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Company | null>(null);
+  useOpenCreate("companies", () => { setEditing(null); setModalOpen(true); });
 
   const combined = useMemo(() => [...added, ...COMPANIES], [added]);
   const addedIds = new Set(added.map((c) => c.id));
