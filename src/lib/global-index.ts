@@ -163,7 +163,7 @@ function readAll(): IndexedRecord[] {
       subtitle: `${co.industry ?? ""}${co.revenue ? " · " + co.revenue : ""}`,
       meta: (co.industry as string) ?? "",
       href: `/companies/${co.id}`,
-      keywords: kw(co.name, co.industry, co.website, co.revenue),
+      keywords: kw((co as any).name, (co as any).industry, (co as any).website, (co as any).revenue),
       raw: co,
     });
   }
@@ -260,7 +260,7 @@ function readAll(): IndexedRecord[] {
       subtitle: `${d.type ?? ""}${d.related ? " · " + d.related : ""}`,
       meta: (d.type as string) ?? "",
       href: "/documents",
-      keywords: kw(d.name, d.type, d.related, d.owner),
+      keywords: kw((d as any).name, (d as any).type, (d as any).related, (d as any).owner),
       raw: d,
     });
   }
