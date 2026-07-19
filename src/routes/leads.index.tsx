@@ -17,6 +17,7 @@ import {
 import { PageHeader, GlassCard, Badge, Avatar } from "@/components/crm-ui";
 import { Modal, Button, FormField, Input } from "@/components/ui-kit";
 import { useLeadStore, type StoredLead } from "@/lib/lead-store";
+import { useOpenCreate } from "@/lib/use-open-create";
 
 export const Route = createFileRoute("/leads/")({
   head: () => ({
