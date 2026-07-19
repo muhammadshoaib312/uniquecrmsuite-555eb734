@@ -59,6 +59,7 @@ function TasksPage() {
   const [view, setView] = useState<"list" | "board" | "calendar">("list");
   const { items: added, add, update, remove } = useRecordStore<Task>("tasks");
   const [modalOpen, setModalOpen] = useState(false);
+  useOpenCreate("tasks", () => setModalOpen(true));
 
   const combined = useMemo(() => [...added, ...STATIC_TASKS], [added]);
   const addedIds = new Set(added.map((t) => t.id));
