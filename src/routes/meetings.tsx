@@ -47,6 +47,7 @@ const EMPTY: FormState = { title: "", time: "", duration: "30m", type: "Video", 
 function MeetingsPage() {
   const { items: added, add, remove } = useRecordStore<StoredMeeting>("meetings");
   const [modalOpen, setModalOpen] = useState(false);
+  useOpenCreate("meetings", () => setModalOpen(true));
   const combined = useMemo(() => [...added, ...STATIC_MEETINGS], [added]);
   const addedIds = new Set(added.map((m) => m.id));
 
