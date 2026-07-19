@@ -66,11 +66,28 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [searchQ, setSearchQ] = useState("");
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [paletteSeed, setPaletteSeed] = useState("");
+  const unread = useNotificationCount();
+
+  // Global ⌘K / Ctrl+K keyboard shortcut for the command palette.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteSeed("");
+        setPaletteOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // Auth routes render without the shell chrome
   if (pathname === "/login" || pathname === "/signup" || pathname === "/forgot-password") {
     return <>{children}</>;
   }
+
 
   return (
     <div className="relative min-h-screen">
