@@ -116,8 +116,8 @@ function safeRead<T>(key: string): T[] {
   }
 }
 
-function kw(...parts: (string | number | undefined | null)[]) {
-  return parts.filter(Boolean).join(" ").toLowerCase();
+function kw(...parts: (string | number | undefined | null | unknown)[]) {
+  return parts.filter(Boolean).map((p) => String(p)).join(" ").toLowerCase();
 }
 
 function readAll(): IndexedRecord[] {
