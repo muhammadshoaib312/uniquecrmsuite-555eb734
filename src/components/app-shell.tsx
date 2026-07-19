@@ -157,14 +157,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="glass mt-3 rounded-xl p-4">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-[color:var(--brand-pink)]" />
-                <span className="text-xs font-semibold">Upgrade to Pro</span>
+                <span className="text-xs font-semibold">Development Preview</span>
               </div>
               <p className="mt-1.5 text-xs text-muted-foreground">
-                Unlock automations, AI insights, and unlimited seats.
+                UniqueCRM is in active development. New modules ship weekly.
               </p>
-              <button className="gradient-brand-bg mt-3 w-full rounded-lg py-1.5 text-xs font-semibold text-white transition-transform hover:scale-[1.02]">
-                Upgrade
-              </button>
             </div>
           )}
 
