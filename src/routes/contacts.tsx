@@ -62,6 +62,7 @@ function ContactsPage() {
   const { items: added, add, update, remove } = useRecordStore<Contact>("contacts");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Contact | null>(null);
+  useOpenCreate("contacts", () => { setEditing(null); setModalOpen(true); });
 
   const combined: Contact[] = useMemo(() => [...added, ...STATIC_CONTACTS], [added]);
   const addedIds = new Set(added.map((c) => c.id));
