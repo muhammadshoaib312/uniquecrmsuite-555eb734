@@ -70,11 +70,68 @@ function SettingsPage() {
           {active === "notifications" && <NotificationsSection />}
           {active === "theme" && <ThemeSection />}
           {active === "security" && <SecuritySection />}
+          {active === "demo" && <DemoDataSection />}
         </div>
       </div>
     </div>
   );
 }
+
+function DemoDataSection() {
+  const [msg, setMsg] = useState<string | null>(null);
+  const doLoad = () => {
+    loadDemoData();
+    setMsg("Demo dataset loaded across every module.");
+    setTimeout(() => setMsg(null), 3200);
+  };
+  const doReset = () => {
+    if (!window.confirm("Clear every locally stored record? This cannot be undone.")) return;
+    resetDemoData();
+    setMsg("All local data cleared. Modules are back to their seed content.");
+    setTimeout(() => setMsg(null), 3200);
+  };
+  return (
+    <GlassCard>
+      <h2 className="text-lg font-semibold">Demo Data</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        UniqueCRM stores every record you create in this browser. Load a fresh demo dataset to explore the platform, or reset everything to start from scratch.
+      </p>
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <button
+          onClick={doLoad}
+          className="glass group flex items-start gap-3 rounded-2xl p-4 text-left transition hover:-translate-y-0.5 hover:glow-shadow-sm"
+        >
+          <span className="gradient-brand-bg grid h-10 w-10 shrink-0 place-items-center rounded-xl text-white">
+            <Sparkles className="h-4 w-4" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold">Load Demo Data</span>
+            <span className="block text-xs text-muted-foreground">Populate Leads, Deals, Contacts, Tasks, Meetings and more.</span>
+          </span>
+        </button>
+        <button
+          onClick={doReset}
+          className="glass group flex items-start gap-3 rounded-2xl p-4 text-left transition hover:-translate-y-0.5"
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/5 text-[color:var(--brand-pink)]">
+            <RotateCcw className="h-4 w-4" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold">Reset Everything</span>
+            <span className="block text-xs text-muted-foreground">Clear every record you've created in this browser.</span>
+          </span>
+        </button>
+      </div>
+      {msg && (
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs">
+          <Check className="h-3.5 w-3.5 text-emerald-400" />
+          <span>{msg}</span>
+        </div>
+      )}
+    </GlassCard>
+  );
+}
+
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
