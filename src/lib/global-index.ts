@@ -124,7 +124,7 @@ function readAll(): IndexedRecord[] {
   const out: IndexedRecord[] = [];
 
   const leads = [
-    ...safeRead<Record<string, string>>("uniquecrm-leads-added"),
+    ...safeRead<Record<string, any>>("uniquecrm-leads-added"),
     ...LEADS_SEED,
   ];
   for (const l of leads) {
@@ -140,7 +140,7 @@ function readAll(): IndexedRecord[] {
     });
   }
 
-  const contacts = [...safeRead<Record<string, string>>("uniquecrm:contacts"), ...CONTACTS_SEED];
+  const contacts = [...safeRead<Record<string, any>>("uniquecrm:contacts"), ...CONTACTS_SEED];
   for (const c of contacts) {
     out.push({
       id: `contacts:${c.id}`,
@@ -154,7 +154,7 @@ function readAll(): IndexedRecord[] {
     });
   }
 
-  const companies = [...safeRead<Record<string, string>>("uniquecrm:companies"), ...COMPANIES_SEED];
+  const companies = [...safeRead<Record<string, any>>("uniquecrm:companies"), ...COMPANIES_SEED];
   for (const co of companies) {
     out.push({
       id: `companies:${co.id}`,
@@ -195,7 +195,7 @@ function readAll(): IndexedRecord[] {
     }
   }
 
-  const tasks = [...safeRead<Record<string, string>>("uniquecrm:tasks"), ...TASKS_SEED];
+  const tasks = [...safeRead<Record<string, any>>("uniquecrm:tasks"), ...TASKS_SEED];
   for (const t of tasks) {
     out.push({
       id: `tasks:${t.id}`,
@@ -209,7 +209,7 @@ function readAll(): IndexedRecord[] {
     });
   }
 
-  const meetings = [...safeRead<Record<string, string>>("uniquecrm:meetings"), ...MEETINGS_SEED];
+  const meetings = [...safeRead<Record<string, any>>("uniquecrm:meetings"), ...MEETINGS_SEED];
   for (const m of meetings) {
     out.push({
       id: `meetings:${m.id}`,
@@ -223,7 +223,7 @@ function readAll(): IndexedRecord[] {
     });
   }
 
-  const products = [...safeRead<Record<string, string>>("uniquecrm:products"), ...PRODUCTS_SEED];
+  const products = [...safeRead<Record<string, any>>("uniquecrm:products"), ...PRODUCTS_SEED];
   for (const p of products) {
     out.push({
       id: `products:${p.id}`,
@@ -237,7 +237,7 @@ function readAll(): IndexedRecord[] {
     });
   }
 
-  const quotes = [...safeRead<Record<string, string>>("uniquecrm:quotes"), ...QUOTES_SEED];
+  const quotes = [...safeRead<Record<string, any>>("uniquecrm:quotes"), ...QUOTES_SEED];
   for (const q of quotes) {
     out.push({
       id: `quotes:${q.id}`,
@@ -251,7 +251,7 @@ function readAll(): IndexedRecord[] {
     });
   }
 
-  const docs = [...safeRead<Record<string, string>>("uniquecrm:documents"), ...DOCS_SEED];
+  const docs = [...safeRead<Record<string, any>>("uniquecrm:documents"), ...DOCS_SEED];
   for (const d of docs) {
     out.push({
       id: `documents:${d.id}`,
@@ -265,7 +265,7 @@ function readAll(): IndexedRecord[] {
     });
   }
 
-  const tickets = [...safeRead<Record<string, string>>("uniquecrm:tickets"), ...TICKETS_SEED];
+  const tickets = [...safeRead<Record<string, any>>("uniquecrm:tickets"), ...TICKETS_SEED];
   for (const t of tickets) {
     out.push({
       id: `tickets:${t.id}`,
