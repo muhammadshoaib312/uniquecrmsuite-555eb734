@@ -1,76 +1,34 @@
-import { useEffect, useState, useCallback } from "react";
+// Backwards-compatible facade over the new service layer.
+//
+// Public API (`useRecordStore(key)`) is unchanged: existing pages continue
+// to work without edits. Under the hood every CRUD op now flows through:
+//   Component → useResource → BaseService → Repository → StorageAdapter
+//
+// New code should prefer `useResource(services.<name>)` directly.
 
-// Generic localStorage-backed record store for demo CRUD.
-// Each stored item requires an `id` field.
+import { useMemo } from "react";
+import { BaseService } from "@/services/base.service";
+import { Repository, type HasId } from "@/api/repository";
+import { services } from "@/services";
+import { useResource } from "@/hooks/useResource";
 
-export function useRecordStore<T extends { id: string }>(key: string) {
-  const storageKey = `uniquecrm:${key}`;
-  const eventName = `uniquecrm:${key}-changed`;
+type KnownKey = keyof typeof services;
 
-  const read = useCallback((): T[] => {
-    if (typeof window === "undefined") return [];
-    try {
-      const raw = window.localStorage.getItem(storageKey);
-      if (!raw) return [];
-      const v = JSON.parse(raw);
-      return Array.isArray(v) ? (v as T[]) : [];
-    } catch {
-      return [];
-    }
-  }, [storageKey]);
+function getService<T extends HasId>(key: string): BaseService<T> {
+  if (key in services) {
+    return services[key as KnownKey] as unknown as BaseService<T>;
+  }
+  // Ad-hoc resources (e.g. "deals-board", "campaigns") — build on the fly.
+  return new BaseService<T>(new Repository<T>(key));
+}
 
-  const write = useCallback(
-    (list: T[]) => {
-      try {
-        window.localStorage.setItem(storageKey, JSON.stringify(list));
-        window.dispatchEvent(new CustomEvent(eventName));
-      } catch {}
-    },
-    [storageKey, eventName],
-  );
-
-  const [items, setItems] = useState<T[]>([]);
-
-  useEffect(() => {
-    setItems(read());
-    const onChange = () => setItems(read());
-    window.addEventListener(eventName, onChange);
-    window.addEventListener("storage", onChange);
-    return () => {
-      window.removeEventListener(eventName, onChange);
-      window.removeEventListener("storage", onChange);
-    };
-  }, [read, eventName]);
-
-  const add = useCallback(
-    (item: Omit<T, "id"> & { id?: string }): T => {
-      const id = item.id ?? `${key}-${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}`;
-      const record = { ...item, id } as T;
-      const next = [record, ...read()];
-      write(next);
-      setItems(next);
-      return record;
-    },
-    [key, read, write],
-  );
-
-  const update = useCallback(
-    (id: string, patch: Partial<T>): void => {
-      const next = read().map((it) => (it.id === id ? { ...it, ...patch } : it));
-      write(next);
-      setItems(next);
-    },
-    [read, write],
-  );
-
-  const remove = useCallback(
-    (id: string): void => {
-      const next = read().filter((it) => it.id !== id);
-      write(next);
-      setItems(next);
-    },
-    [read, write],
-  );
-
+export function useRecordStore<T extends { id: string }>(key: string): {
+  items: T[];
+  add: (item: Omit<T, "id"> & { id?: string }) => T;
+  update: (id: string, patch: Partial<T>) => void;
+  remove: (id: string) => void;
+} {
+  const service = useMemo(() => getService<T>(key), [key]);
+  const { items, add, update, remove } = useResource<T>(service);
   return { items, add, update, remove };
 }
