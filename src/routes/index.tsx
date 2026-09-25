@@ -61,7 +61,6 @@ function Dashboard() {
   const lostDeals = deals.filter((d) => /lost/i.test(String(d.raw.stage ?? "")));
   const pipelineValue = openDeals.reduce((sum, d) => sum + Number(d.raw.value ?? 0), 0);
   const wonValue = wonDeals.reduce((sum, d) => sum + Number(d.raw.value ?? 0), 0);
-  const overdue = tasks.filter((t) => String(t.raw.due ?? "") < today && Boolean(t.raw.due) && t.raw.status !== "Completed").length;
   const dueToday = tasks.filter((t) => t.raw.due === today && t.raw.status !== "Completed").length;
   const closedDeals = wonDeals.length + lostDeals.length;
   const winRate = closedDeals ? Math.round(wonDeals.length / closedDeals * 100) : 0;
@@ -190,7 +189,7 @@ function Dashboard() {
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <GlassCard>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Recent Activities</h2>
+              <h2 className="text-lg font-semibold">Recent Records</h2>
             <Link to="/activities" className="text-xs text-muted-foreground hover:text-foreground">View all</Link>
           </div>
           {activities.length ? <ul className="space-y-4">
@@ -209,7 +208,7 @@ function Dashboard() {
                 <Badge tone="default">{a.module.slice(0, -1)}</Badge>
               </li>
             ))}
-          </ul> : <div className="flex min-h-48 items-center justify-center text-sm text-muted-foreground">No activity yet</div>}
+          </ul> : <div className="flex min-h-48 items-center justify-center text-sm text-muted-foreground">No records yet</div>}
         </GlassCard>
 
         <GlassCard>
@@ -301,7 +300,7 @@ function QuickAction({
   module: string;
 }) {
   return (
-    <button onClick={() => window.dispatchEvent(new CustomEvent("uniquecrm:open-create", { detail: module }))} className="group flex w-full items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-3 text-left transition hover:border-white/10 hover:bg-white/[0.05]">
+    <Link to={module === "leads" ? "/leads" : module === "tasks" ? "/tasks" : "/meetings"} className="group flex w-full items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-3 text-left transition hover:border-white/10 hover:bg-white/[0.05]">
       <div className="gradient-brand-bg grid h-10 w-10 shrink-0 place-items-center rounded-xl text-white transition-transform group-hover:scale-105 group-hover:glow-shadow-sm">
         <Icon className="h-4 w-4" />
       </div>
@@ -310,6 +309,6 @@ function QuickAction({
         <p className="truncate text-xs text-muted-foreground">{desc}</p>
       </div>
       <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-foreground" />
-    </button>
+    </Link>
   );
 }
