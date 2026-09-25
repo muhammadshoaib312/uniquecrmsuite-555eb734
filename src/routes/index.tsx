@@ -136,53 +136,17 @@ function Dashboard() {
             ))}
           </div>
 
-          {/* Revenue trend */}
+          {/* Revenue trend frame: no fabricated series when there is no historical data. */}
           <div className="mt-6 border-t border-white/5 pt-5">
             <div className="mb-2 flex items-center justify-between text-xs">
               <span className="font-medium">Revenue trend · 12 months</span>
-              <span className="gradient-text inline-flex items-center gap-1 font-semibold">
-                <TrendingUp className="h-3 w-3" />
-                +22.4% YoY
-              </span>
             </div>
-            <svg viewBox="0 0 600 140" className="h-32 w-full">
-              <defs>
-                <linearGradient id="area" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="oklch(0.72 0.25 340)" stopOpacity="0.55" />
-                  <stop offset="100%" stopColor="oklch(0.68 0.24 310)" stopOpacity="0" />
-                </linearGradient>
-                <linearGradient id="stroke" x1="0" x2="1" y1="0" y2="0">
-                  <stop offset="0%" stopColor="oklch(0.68 0.24 310)" />
-                  <stop offset="100%" stopColor="oklch(0.72 0.25 340)" />
-                </linearGradient>
-              </defs>
-              <path
-                d="M0,110 C60,90 100,100 160,75 C220,50 260,85 320,60 C380,35 420,65 480,40 C540,20 580,30 600,18 L600,140 L0,140 Z"
-                fill="url(#area)"
-              />
-              <path
-                d="M0,110 C60,90 100,100 160,75 C220,50 260,85 320,60 C380,35 420,65 480,40 C540,20 580,30 600,18"
-                fill="none"
-                stroke="url(#stroke)"
-                strokeWidth="2.5"
-                style={{ filter: "drop-shadow(0 2px 8px oklch(0.72 0.25 340 / 0.6))" }}
-              />
-              {[
-                [0, 110], [160, 75], [320, 60], [480, 40], [600, 18],
-              ].map(([x, y], i) => (
-                <circle key={i} cx={x} cy={y} r="3.5" fill="oklch(0.72 0.25 340)" style={{ filter: "drop-shadow(0 0 6px oklch(0.72 0.25 340))" }} />
-              ))}
-            </svg>
+            <div className="flex h-32 items-center justify-center border-b border-white/5 text-xs text-muted-foreground">No revenue history yet</div>
           </div>
         </GlassCard>
 
         {/* Quick Actions */}
         <GlassCard className="relative overflow-hidden">
-          <div
-            aria-hidden
-            className="absolute -top-16 -right-16 h-48 w-48 rounded-full opacity-30 blur-3xl"
-            style={{ background: "var(--gradient-brand)" }}
-          />
           <div className="relative">
             <div className="mb-4 flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-[color:var(--brand-pink)]" />
@@ -190,9 +154,9 @@ function Dashboard() {
             </div>
 
             <div className="space-y-2.5">
-              <QuickAction icon={UserPlus} label="Create Lead" desc="Capture a new prospect" />
-              <QuickAction icon={ListPlus} label="Create Task" desc="Add a follow-up to your list" />
-              <QuickAction icon={CalendarPlus} label="Create Meeting" desc="Book a call or demo" />
+              <QuickAction icon={UserPlus} label="Create Lead" desc="Capture a new prospect" module="leads" />
+              <QuickAction icon={ListPlus} label="Create Task" desc="Add a follow-up to your list" module="tasks" />
+              <QuickAction icon={CalendarPlus} label="Create Meeting" desc="Book a call or demo" module="meetings" />
             </div>
 
             <div className="glass mt-5 rounded-xl p-4">
@@ -201,20 +165,19 @@ function Dashboard() {
                   <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                     Win rate
                   </p>
-                  <p className="mt-1 text-2xl font-bold gradient-text">42%</p>
+                  <p className="mt-1 text-2xl font-bold gradient-text">{winRate}%</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Quota</p>
-                  <p className="text-sm font-semibold">$1.2M / $2M</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Closed deals</p>
+                  <p className="text-sm font-semibold">{wonDeals.length} won / {closedDeals} total</p>
                 </div>
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/5">
                 <div
                   className="h-full rounded-full"
                   style={{
-                    width: "60%",
+                    width: `${winRate}%`,
                     background: "var(--gradient-brand)",
-                    boxShadow: "0 0 16px oklch(0.72 0.25 340 / 0.6)",
                   }}
                 />
               </div>
@@ -228,40 +191,38 @@ function Dashboard() {
         <GlassCard>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Recent Activities</h2>
-            <button className="text-xs text-muted-foreground hover:text-foreground">View all</button>
+            <Link to="/activities" className="text-xs text-muted-foreground hover:text-foreground">View all</Link>
           </div>
-          <ul className="space-y-4">
+          {activities.length ? <ul className="space-y-4">
             {activities.map((a, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <Avatar name={a.user} tone={i} />
+              <li key={a.id} className="flex items-start gap-3">
+                <Avatar name={a.title} tone={i} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm">
-                    <span className="font-medium">{a.user}</span>{" "}
-                    <span className="text-muted-foreground">{a.action}</span>{" "}
-                    <span className="font-medium">{a.target}</span>
+                    <span className="font-medium">{a.title}</span>
                   </p>
                   <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3" />
-                    {a.time}
+                    {a.module === "deals" ? String(a.raw.stage ?? "Deal") : a.module === "tasks" ? String(a.raw.status ?? "Task") : a.module === "meetings" ? String(a.raw.time ?? "Meeting") : String(a.raw.created ?? "Lead")}
                   </p>
                 </div>
-                <Badge tone={a.tone}>{a.tone === "success" ? "Won" : a.tone === "brand" ? "Sent" : a.tone === "info" ? "Call" : a.tone === "warning" ? "Meeting" : "Note"}</Badge>
+                <Badge tone="default">{a.module.slice(0, -1)}</Badge>
               </li>
             ))}
-          </ul>
+          </ul> : <div className="flex min-h-48 items-center justify-center text-sm text-muted-foreground">No activity yet</div>}
         </GlassCard>
 
         <GlassCard>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">Upcoming Meetings</h2>
-            <button className="text-xs text-muted-foreground hover:text-foreground">Calendar</button>
+            <Link to="/calendar" className="text-xs text-muted-foreground hover:text-foreground">Calendar</Link>
           </div>
-          <ul className="space-y-3">
-            {meetings.map((m) => {
-              const Icon = m.icon;
+          {meetings.length ? <ul className="space-y-3">
+            {meetings.slice(0, 4).map((m) => {
+              const Icon = m.raw.type === "Call" ? Phone : m.raw.type === "Onsite" ? MapPin : Video;
               return (
                 <li
-                  key={m.title}
+                  key={m.id}
                   className="group flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-3 transition hover:border-white/10 hover:bg-white/[0.05]"
                 >
                   <div className="gradient-brand-bg grid h-11 w-11 shrink-0 place-items-center rounded-xl text-white">
@@ -271,14 +232,14 @@ function Dashboard() {
                     <p className="truncate text-sm font-medium">{m.title}</p>
                     <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
                       <Clock className="h-3 w-3 shrink-0" />
-                      {m.time} · with {m.with}
+                      {String(m.raw.time ?? "")} {m.raw.with ? `· with ${m.raw.with}` : ""}
                     </p>
                   </div>
-                  <Badge tone="default">{m.type}</Badge>
+                  <Badge tone="default">{String(m.raw.type ?? "Meeting")}</Badge>
                 </li>
               );
             })}
-          </ul>
+          </ul> : <div className="flex min-h-48 items-center justify-center text-sm text-muted-foreground">No meetings scheduled</div>}
         </GlassCard>
       </div>
 
@@ -287,9 +248,9 @@ function Dashboard() {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold">Latest Leads</h2>
-            <p className="text-xs text-muted-foreground">Freshest prospects, ranked by lead score</p>
+            <p className="text-xs text-muted-foreground">Recently added prospects</p>
           </div>
-          <button className="glass rounded-lg px-3 py-1.5 text-xs font-medium">View all</button>
+          <Link to="/leads" className="glass rounded-lg px-3 py-1.5 text-xs font-medium">View all</Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -298,47 +259,30 @@ function Dashboard() {
                 <th className="pb-3 pr-4 font-medium">Lead</th>
                 <th className="pb-3 pr-4 font-medium">Company</th>
                 <th className="pb-3 pr-4 font-medium">Source</th>
-                <th className="pb-3 pr-4 font-medium">Score</th>
-                <th className="pb-3" />
+                <th className="pb-3 pr-4 font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
-              {leads.map((l, i) => (
-                <tr key={l.name} className="border-t border-white/5">
+              {leads.slice(0, 5).map((l, i) => (
+                <tr key={l.id} className="border-t border-white/5">
                   <td className="py-3 pr-4">
                     <div className="flex items-center gap-3">
-                      <Avatar name={l.name} tone={i} />
-                      <span className="font-medium">{l.name}</span>
+                      <Avatar name={l.title} tone={i} />
+                      <span className="font-medium">{l.title}</span>
                     </div>
                   </td>
-                  <td className="py-3 pr-4 text-muted-foreground">{l.company}</td>
+                  <td className="py-3 pr-4 text-muted-foreground">{String(l.raw.company ?? "—")}</td>
                   <td className="py-3 pr-4">
-                    <Badge tone={l.tone}>{l.source}</Badge>
+                    <Badge tone="default">{String(l.raw.source ?? "—")}</Badge>
                   </td>
                   <td className="py-3 pr-4">
-                    <div className="flex items-center gap-2">
-                      <div className="h-1.5 w-24 overflow-hidden rounded-full bg-white/5">
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${l.score}%`,
-                            background: "var(--gradient-brand)",
-                            boxShadow: "0 0 10px oklch(0.72 0.25 340 / 0.5)",
-                          }}
-                        />
-                      </div>
-                      <span className="font-semibold">{l.score}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 text-right">
-                    <button className="rounded-lg p-1.5 text-muted-foreground hover:bg-white/5 hover:text-foreground">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </button>
+                    <Badge tone="default">{String(l.raw.status ?? "New")}</Badge>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {!leads.length && <div className="flex min-h-32 items-center justify-center text-sm text-muted-foreground">No leads yet</div>}
         </div>
       </GlassCard>
     </div>
@@ -349,13 +293,15 @@ function QuickAction({
   icon: Icon,
   label,
   desc,
+  module,
 }: {
   icon: typeof UserPlus;
   label: string;
   desc: string;
+  module: string;
 }) {
   return (
-    <button className="group flex w-full items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-3 text-left transition hover:border-white/10 hover:bg-white/[0.05]">
+    <button onClick={() => window.dispatchEvent(new CustomEvent("uniquecrm:open-create", { detail: module }))} className="group flex w-full items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-3 text-left transition hover:border-white/10 hover:bg-white/[0.05]">
       <div className="gradient-brand-bg grid h-10 w-10 shrink-0 place-items-center rounded-xl text-white transition-transform group-hover:scale-105 group-hover:glow-shadow-sm">
         <Icon className="h-4 w-4" />
       </div>
