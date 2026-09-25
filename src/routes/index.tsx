@@ -1,11 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   DollarSign,
   Users,
   Target,
   CheckSquare,
   ArrowUpRight,
-  MoreHorizontal,
   Video,
   Phone,
   UserPlus,
@@ -14,10 +13,9 @@ import {
   Clock,
   MapPin,
   Sparkles,
-  TrendingUp,
 } from "lucide-react";
 import { PageHeader, StatCard, GlassCard, Badge, Avatar } from "@/components/crm-ui";
-import { useDashboardMetrics } from "@/lib/global-index";
+import { useGlobalIndex, type IndexedRecord } from "@/lib/global-index";
 
 const fmtCurrency = (n: number) =>
   n >= 1_000_000
@@ -27,61 +25,72 @@ const fmtCurrency = (n: number) =>
       : `$${n}`;
 
 export const Route = createFileRoute("/")({
+  head: () => ({ meta: [
+    { title: "Dashboard — UniqueCRM" },
+    { name: "description", content: "View your saved leads, deals, tasks, and meetings in UniqueCRM." },
+    { property: "og:title", content: "Dashboard — UniqueCRM" },
+    { property: "og:description", content: "View your saved leads, deals, tasks, and meetings in UniqueCRM." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: Dashboard,
 });
 
-const pipelineStages = [
-  { name: "Lead", count: 42, value: "$128K", pct: 100 },
-  { name: "Qualified", count: 28, value: "$264K", pct: 78 },
-  { name: "Proposal", count: 14, value: "$412K", pct: 58 },
-  { name: "Negotiation", count: 8, value: "$298K", pct: 38 },
-  { name: "Won", count: 12, value: "$186K", pct: 22 },
-];
+// The global index also includes built-in sample rows. Keep those available elsewhere,
+// but never count or display them as real activity on the dashboard.
+const sampleIds: Record<string, Set<string>> = {
+  leads: new Set(["L-1042", "L-1041", "L-1040", "L-1039", "L-1038", "L-1037", "L-1036", "L-1035", "L-2201", "L-2202", "L-2203"]),
+  deals: new Set([...Array.from({ length: 14 }, (_, i) => `d${i + 1}`), "dd1", "dd2", "dd3", "dd4"]),
+  tasks: new Set(["1", "2", "3", "4", "5", "td1", "td2", "td3"]),
+  meetings: new Set(["m1", "m2", "m3", "m4", "md1", "md2"]),
+};
 
-const activities = [
-  { user: "Ava Chen", action: "closed deal with", target: "Initech", time: "12m ago", tone: "success" as const },
-  { user: "Liam Patel", action: "called", target: "Sarah at Acme Corp", time: "1h ago", tone: "info" as const },
-  { user: "Sofia Reyes", action: "sent proposal to", target: "Globex", time: "3h ago", tone: "brand" as const },
-  { user: "Noah Kim", action: "scheduled demo with", target: "Umbrella Co.", time: "Yesterday", tone: "warning" as const },
-  { user: "Ava Chen", action: "added note on", target: "Stark Industries", time: "Yesterday", tone: "default" as const },
-];
-
-const meetings = [
-  { title: "Demo — Umbrella Co.", time: "Today, 2:00 PM", type: "Video", icon: Video, with: "Emma Wilson" },
-  { title: "Discovery call — Hooli", time: "Today, 4:30 PM", type: "Call", icon: Phone, with: "Lucas Meyer" },
-  { title: "QBR — Acme Corp", time: "Tomorrow, 10:00 AM", type: "Video", icon: Video, with: "Sarah Johnson" },
-  { title: "Onsite — Stark Industries", time: "Aug 16, 9:00 AM", type: "Onsite", icon: MapPin, with: "James O'Brien" },
-];
-
-const leads = [
-  { name: "Priya Nair", company: "Northwind", source: "Website", score: 92, tone: "brand" as const },
-  { name: "Michael Chen", company: "Globex", source: "Referral", score: 88, tone: "success" as const },
-  { name: "James O'Brien", company: "Stark Industries", source: "LinkedIn", score: 76, tone: "info" as const },
-  { name: "Aiko Tanaka", company: "Wayne Enterprises", source: "Event", score: 71, tone: "info" as const },
-  { name: "Lucas Meyer", company: "Hooli", source: "Cold outbound", score: 54, tone: "warning" as const },
-];
+function savedRecords(items: IndexedRecord[], module: IndexedRecord["module"]) {
+  return items.filter((item) => item.module === module && !sampleIds[module]?.has(item.id.slice(module.length + 1)));
+}
 
 function Dashboard() {
-  const m = useDashboardMetrics();
+  const index = useGlobalIndex();
+  const leads = savedRecords(index, "leads");
+  const deals = savedRecords(index, "deals");
+  const tasks = savedRecords(index, "tasks");
+  const meetings = savedRecords(index, "meetings");
+  const today = new Date().toLocaleDateString("en-CA");
+  const openDeals = deals.filter((d) => !/won|lost/i.test(String(d.raw.stage ?? "")));
+  const wonDeals = deals.filter((d) => /won/i.test(String(d.raw.stage ?? "")));
+  const lostDeals = deals.filter((d) => /lost/i.test(String(d.raw.stage ?? "")));
+  const pipelineValue = openDeals.reduce((sum, d) => sum + Number(d.raw.value ?? 0), 0);
+  const wonValue = wonDeals.reduce((sum, d) => sum + Number(d.raw.value ?? 0), 0);
+  const overdue = tasks.filter((t) => String(t.raw.due ?? "") < today && Boolean(t.raw.due) && t.raw.status !== "Completed").length;
+  const dueToday = tasks.filter((t) => t.raw.due === today && t.raw.status !== "Completed").length;
+  const closedDeals = wonDeals.length + lostDeals.length;
+  const winRate = closedDeals ? Math.round(wonDeals.length / closedDeals * 100) : 0;
+  const stages = ["New Lead", "Qualified", "Proposal Sent", "Negotiation", "Won"];
+  const pipelineStages = stages.map((name) => {
+    const entries = deals.filter((d) => name === "New Lead" ? /^(new|new lead)$/i.test(String(d.raw.stage)) : name === "Proposal Sent" ? /proposal/i.test(String(d.raw.stage)) : d.raw.stage === name);
+    const value = entries.reduce((sum, d) => sum + Number(d.raw.value ?? 0), 0);
+    return { name, count: entries.length, value: fmtCurrency(value), pct: deals.length ? entries.length / deals.length * 100 : 0 };
+  });
+  const activities = [...leads, ...deals, ...tasks, ...meetings].slice(0, 5);
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
-        title="Welcome back, Ava"
-        subtitle="Here's what's happening across your pipeline today."
+        title="Dashboard"
+        subtitle="Your workspace at a glance."
         actions={
-          <button className="gradient-brand-bg glow-shadow-sm hidden items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white transition-transform hover:scale-[1.02] sm:inline-flex">
+          <Link to="/reports" className="gradient-brand-bg glow-shadow-sm hidden items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white transition-transform hover:scale-[1.02] sm:inline-flex">
             <ArrowUpRight className="h-4 w-4" />
             View report
-          </button>
+          </Link>
         }
       />
 
       {/* Top stat cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Leads" value={m.totalLeads.toLocaleString()} delta={`${m.qualifiedLeads} qualified`} icon={<Users className="h-5 w-5" />} />
-        <StatCard label="Open Deals" value={m.openDeals.toLocaleString()} delta={fmtCurrency(m.pipelineValue) + " in pipeline"} icon={<Target className="h-5 w-5" />} />
-        <StatCard label="Revenue Won" value={fmtCurrency(m.wonValue)} delta="+ all time" icon={<DollarSign className="h-5 w-5" />} />
-        <StatCard label="Tasks Due Today" value={m.tasksDueToday.toString()} delta={`${m.overdueTasks} overdue`} icon={<CheckSquare className="h-5 w-5" />} />
+        <StatCard label="Total Leads" value={String(leads.length)} icon={<Users className="h-5 w-5" />} />
+        <StatCard label="Open Deals" value={String(openDeals.length)} icon={<Target className="h-5 w-5" />} />
+        <StatCard label="Revenue Won" value={fmtCurrency(wonValue)} icon={<DollarSign className="h-5 w-5" />} />
+        <StatCard label="Tasks Due Today" value={String(dueToday)} icon={<CheckSquare className="h-5 w-5" />} />
       </div>
 
       {/* Sales Pipeline + Quick Actions */}
@@ -90,11 +99,9 @@ function Dashboard() {
           <div className="mb-5 flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold">Sales Pipeline</h2>
-              <p className="text-xs text-muted-foreground">$1.28M in open opportunities</p>
+              <p className="text-xs text-muted-foreground">{fmtCurrency(pipelineValue)} in open opportunities</p>
             </div>
-            <button className="glass rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground">
-              This quarter
-            </button>
+            <span className="glass rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground">All deals</span>
           </div>
 
           {/* Funnel bars */}
