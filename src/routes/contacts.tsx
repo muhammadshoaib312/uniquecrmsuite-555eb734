@@ -34,16 +34,6 @@ type Contact = {
   tone: number;
 };
 
-const STATIC_CONTACTS: Contact[] = [
-  { id: "c1", name: "Ava Reynolds", company: "Northwind Labs", email: "ava@northwind.io", phone: "+1 (415) 555-2201", jobTitle: "VP Sales", status: "VIP", tags: ["Enterprise", "Priority"], lastActivity: "2h ago", tone: 0 },
-  { id: "c2", name: "Marcus Chen", company: "Lumen Studios", email: "marcus@lumen.co", phone: "+1 (628) 555-9911", jobTitle: "Creative Director", status: "Active", tags: ["Design", "Retainer"], lastActivity: "Yesterday", tone: 1 },
-  { id: "c3", name: "Priya Natarajan", company: "Halcyon Systems", email: "priya@halcyon.dev", phone: "+91 98765 12345", jobTitle: "CTO", status: "Lead", tags: ["Warm", "SaaS"], lastActivity: "3d ago", tone: 2 },
-  { id: "c4", name: "Diego Alvarez", company: "Meridian & Co", email: "diego@meridian.com", phone: "+34 611 22 33 44", jobTitle: "Finance Lead", status: "Active", tags: ["Finance"], lastActivity: "1w ago", tone: 3 },
-  { id: "c5", name: "Sofia Petrov", company: "Aster Health", email: "sofia@aster.health", phone: "+44 20 7946 0011", jobTitle: "Ops Manager", status: "Inactive", tags: ["Healthcare"], lastActivity: "3w ago", tone: 4 },
-  { id: "c6", name: "Jamal Turner", company: "Arcadia Media", email: "jamal@arcadia.tv", phone: "+1 (312) 555-6688", jobTitle: "Head of Growth", status: "VIP", tags: ["Media", "Priority"], lastActivity: "5h ago", tone: 0 },
-  { id: "c7", name: "Elena Rossi", company: "Volta Motors", email: "elena@volta.eu", phone: "+39 02 1234 5678", jobTitle: "Product Lead", status: "Active", tags: ["Automotive"], lastActivity: "2d ago", tone: 1 },
-  { id: "c8", name: "Kenji Watanabe", company: "Origami Cloud", email: "kenji@origami.io", phone: "+81 3 5678 9012", jobTitle: "Founder", status: "Lead", tags: ["Cloud", "Trial"], lastActivity: "6d ago", tone: 2 },
-];
 
 const statusTone: Record<Status, "success" | "warning" | "info" | "brand"> = {
   Active: "success",
@@ -53,7 +43,7 @@ const statusTone: Record<Status, "success" | "warning" | "info" | "brand"> = {
 };
 
 type FormState = Omit<Contact, "id" | "tone">;
-const EMPTY: FormState = { name: "", company: "", email: "", phone: "", jobTitle: "", status: "Lead", tags: [], lastActivity: "just now" };
+const EMPTY: FormState = { name: "", company: "", email: "", phone: "", jobTitle: "", status: "Lead", tags: [], lastActivity: "" };
 
 function ContactsPage() {
   const [view, setView] = useState<"table" | "card">("table");
@@ -64,7 +54,7 @@ function ContactsPage() {
   const [editing, setEditing] = useState<Contact | null>(null);
   useOpenCreate("contacts", () => { setEditing(null); setModalOpen(true); });
 
-  const combined: Contact[] = useMemo(() => [...added, ...STATIC_CONTACTS], [added]);
+  const combined: Contact[] = useMemo(() => added, [added]);
   const addedIds = new Set(added.map((c) => c.id));
 
   const filtered = useMemo(() => {

@@ -18,12 +18,6 @@ export const Route = createFileRoute("/quotes")({
 
 type Status = "Draft" | "Sent" | "Accepted" | "Rejected";
 type Quote = { id: string; number: string; client: string; amount: number; status: Status; expires: string };
-const SEED: Quote[] = [
-  { id: "s1", number: "Q-1042", client: "Acme Corp", amount: 42000, status: "Sent", expires: "Aug 24, 2026" },
-  { id: "s2", number: "Q-1041", client: "Northwind", amount: 18500, status: "Accepted", expires: "Aug 20, 2026" },
-  { id: "s3", number: "Q-1040", client: "Globex", amount: 67200, status: "Draft", expires: "Aug 30, 2026" },
-  { id: "s4", number: "Q-1039", client: "Initech", amount: 9800, status: "Rejected", expires: "Aug 10, 2026" },
-];
 const tone: Record<Status, "brand" | "info" | "success" | "warning"> = { Draft: "info", Sent: "brand", Accepted: "success", Rejected: "warning" };
 type Form = Omit<Quote, "id">;
 const EMPTY: Form = { number: "", client: "", amount: 0, status: "Draft", expires: "" };
@@ -34,7 +28,7 @@ function QuotesPage() {
   const [editing, setEditing] = useState<Quote | null>(null);
   const [form, setForm] = useState<Form>(EMPTY);
   useOpenCreate("quotes", () => { setEditing(null); setForm(EMPTY); setOpen(true); });
-  const combined = [...added, ...SEED];
+  const combined = added;
   const addedIds = new Set(added.map((q) => q.id));
 
   return (

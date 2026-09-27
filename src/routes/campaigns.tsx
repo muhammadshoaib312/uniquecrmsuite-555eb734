@@ -28,12 +28,6 @@ type Campaign = {
   clicked: number;
 };
 
-const SEED: Campaign[] = [
-  { id: "s1", name: "Q3 Product Launch", channel: "Email", status: "Active", audience: 4820, sent: 4820, opened: 2314, clicked: 612 },
-  { id: "s2", name: "Renewal reminders", channel: "Email", status: "Scheduled", audience: 312, sent: 0, opened: 0, clicked: 0 },
-  { id: "s3", name: "SDR outbound — Fintech", channel: "LinkedIn", status: "Active", audience: 180, sent: 142, opened: 96, clicked: 24 },
-  { id: "s4", name: "Summer promo", channel: "Ads", status: "Completed", audience: 12400, sent: 12400, opened: 3120, clicked: 892 },
-];
 
 const tone: Record<Status, "brand" | "info" | "success" | "default"> = {
   Draft: "default", Scheduled: "info", Active: "brand", Completed: "success",
@@ -48,7 +42,7 @@ function CampaignsPage() {
   const [editing, setEditing] = useState<Campaign | null>(null);
   const [form, setForm] = useState<Form>(EMPTY);
 
-  const combined = [...added, ...SEED];
+  const combined = added;
   const addedIds = new Set(added.map((c) => c.id));
 
   const totalAudience = combined.reduce((a, c) => a + c.audience, 0);
@@ -81,9 +75,9 @@ function CampaignsPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Total audience" value={totalAudience.toLocaleString()} delta="+12.4%" />
-        <StatCard label="Messages sent" value={totalSent.toLocaleString()} delta="+18.2%" />
-        <StatCard label="Total clicks" value={totalClicks.toLocaleString()} delta="+6.8%" />
+        <StatCard label="Total audience" value={totalAudience.toLocaleString()} />
+        <StatCard label="Messages sent" value={totalSent.toLocaleString()} />
+        <StatCard label="Total clicks" value={totalClicks.toLocaleString()} />
       </div>
 
       <GlassCard className="mt-6">

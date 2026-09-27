@@ -31,16 +31,6 @@ type Task = {
   due: string; // YYYY-MM-DD
 };
 
-const STATIC_TASKS: Task[] = [
-  { id: "1", title: "Send Northwind renewal proposal", assignee: "Ava", tone: 0, priority: "High", status: "In Progress", due: "2026-07-14" },
-  { id: "2", title: "Prep Q3 pipeline review deck", assignee: "Marcus", tone: 1, priority: "High", status: "Pending", due: "2026-07-15" },
-  { id: "3", title: "Follow up with Halcyon on SOC2", assignee: "Priya", tone: 2, priority: "Medium", status: "Overdue", due: "2026-07-10" },
-  { id: "4", title: "Onboard Meridian success team", assignee: "Diego", tone: 3, priority: "Medium", status: "In Progress", due: "2026-07-16" },
-  { id: "5", title: "Update pricing calculator", assignee: "Sofia", tone: 4, priority: "Low", status: "Completed", due: "2026-07-09" },
-  { id: "6", title: "Reply to Aster support thread", assignee: "Jamal", tone: 0, priority: "Low", status: "Pending", due: "2026-07-17" },
-  { id: "7", title: "Draft July newsletter", assignee: "Elena", tone: 1, priority: "Medium", status: "Pending", due: "2026-07-18" },
-  { id: "8", title: "Close Volta Motors negotiation", assignee: "Kenji", tone: 2, priority: "High", status: "In Progress", due: "2026-07-15" },
-];
 
 const priorityTone: Record<Priority, "warning" | "info" | "default"> = {
   High: "warning", Medium: "info", Low: "default",
@@ -61,7 +51,7 @@ function TasksPage() {
   const [modalOpen, setModalOpen] = useState(false);
   useOpenCreate("tasks", () => setModalOpen(true));
 
-  const combined = useMemo(() => [...added, ...STATIC_TASKS], [added]);
+  const combined = useMemo(() => added, [added]);
   const addedIds = new Set(added.map((t) => t.id));
 
   function toggleStatus(t: Task) {
@@ -185,6 +175,7 @@ function ListView({ tasks, addedIds, onToggle, onDelete }: {
             })}
           </tbody>
         </table>
+        {!tasks.length && <div className="py-12 text-center text-sm text-muted-foreground">No tasks yet.</div>}
       </div>
     </GlassCard>
   );
@@ -229,23 +220,24 @@ function BoardView({ tasks }: { tasks: Task[] }) {
 }
 
 function CalendarView({ tasks }: { tasks: Task[] }) {
-  const days = 31;
-  const startOffset = 3;
+  const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const startOffset = month.getDay();
   const cells = useMemo(() => {
     const arr: (number | null)[] = [];
     for (let i = 0; i < startOffset; i++) arr.push(null);
     for (let d = 1; d <= days; d++) arr.push(d);
     while (arr.length % 7 !== 0) arr.push(null);
     return arr;
-  }, []);
+  }, [days, startOffset]);
 
   return (
     <GlassCard>
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-semibold">July 2026</h3>
+        <h3 className="text-lg font-semibold">{month.toLocaleDateString(undefined, { month: "long", year: "numeric" })}</h3>
         <div className="flex gap-1">
-          <button className="glass rounded-lg p-1.5"><ChevronLeft className="h-4 w-4" /></button>
-          <button className="glass rounded-lg p-1.5"><ChevronRight className="h-4 w-4" /></button>
+          <button onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} className="glass rounded-lg p-1.5"><ChevronLeft className="h-4 w-4" /></button>
+          <button onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} className="glass rounded-lg p-1.5"><ChevronRight className="h-4 w-4" /></button>
         </div>
       </div>
       <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
@@ -255,7 +247,7 @@ function CalendarView({ tasks }: { tasks: Task[] }) {
       </div>
       <div className="grid grid-cols-7 gap-1">
         {cells.map((d, i) => {
-          const dateStr = d != null ? `2026-07-${String(d).padStart(2, "0")}` : null;
+          const dateStr = d != null ? `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}` : null;
           const dayTasks = dateStr ? tasks.filter((t) => t.due === dateStr) : [];
           return (
             <div

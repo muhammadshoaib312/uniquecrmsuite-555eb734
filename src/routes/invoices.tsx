@@ -12,14 +12,7 @@ export const Route = createFileRoute("/invoices")({
   component: InvoicesPage,
 });
 
-const invoices = [
-  { id: "INV-2041", client: "Acme Corp", amount: "$42,000", due: "Aug 20, 2026", status: "Paid", tone: "success" as const },
-  { id: "INV-2040", client: "Globex", amount: "$18,500", due: "Aug 22, 2026", status: "Sent", tone: "info" as const },
-  { id: "INV-2039", client: "Stark Industries", amount: "$120,000", due: "Aug 28, 2026", status: "Sent", tone: "info" as const },
-  { id: "INV-2038", client: "Initech", amount: "$9,800", due: "Aug 12, 2026", status: "Overdue", tone: "warning" as const },
-  { id: "INV-2037", client: "Umbrella Co.", amount: "$56,000", due: "Aug 5, 2026", status: "Paid", tone: "success" as const },
-  { id: "INV-2036", client: "Northwind", amount: "$14,000", due: "Aug 2, 2026", status: "Draft", tone: "default" as const },
-];
+const invoices: { id: string; client: string; amount: string; due: string; status: string; tone: "success" | "info" | "warning" | "default" }[] = [];
 
 function InvoicesPage() {
   return (
@@ -36,9 +29,9 @@ function InvoicesPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Outstanding" value="$164,800" delta="+8.2%" />
-        <StatCard label="Paid this month" value="$284,920" delta="+18.2%" />
-        <StatCard label="Overdue" value="$9,800" delta="-2.4%" />
+        <StatCard label="Outstanding" value="$0" />
+        <StatCard label="Paid this month" value="$0" />
+        <StatCard label="Overdue" value="$0" />
       </div>
 
       <GlassCard className="mt-6">
