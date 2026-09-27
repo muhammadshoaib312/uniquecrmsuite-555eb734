@@ -25,12 +25,6 @@ type Product = {
   status: "Active" | "Draft" | "Archived";
 };
 
-const SEED: Product[] = [
-  { id: "s1", name: "UniqueCRM Starter", sku: "UCM-STR", category: "Plan", price: 29, stock: 999, status: "Active" },
-  { id: "s2", name: "UniqueCRM Growth", sku: "UCM-GRW", category: "Plan", price: 79, stock: 999, status: "Active" },
-  { id: "s3", name: "Onboarding — 4 week", sku: "SVC-ONB", category: "Service", price: 2400, stock: 20, status: "Active" },
-  { id: "s4", name: "White-glove migration", sku: "SVC-MIG", category: "Service", price: 6800, stock: 8, status: "Draft" },
-];
 
 const tone: Record<Product["status"], "brand" | "info" | "default"> = { Active: "brand", Draft: "info", Archived: "default" };
 type Form = Omit<Product, "id">;
@@ -43,7 +37,7 @@ function ProductsPage() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState<Form>(EMPTY);
 
-  const combined = [...added, ...SEED];
+  const combined = added;
   const addedIds = new Set(added.map((p) => p.id));
   const filtered = combined.filter((p) => !q || p.name.toLowerCase().includes(q.toLowerCase()) || p.sku.toLowerCase().includes(q.toLowerCase()));
 

@@ -31,14 +31,6 @@ export type Company = {
   tone: number;
 };
 
-export const COMPANIES: Company[] = [
-  { id: "northwind", name: "Northwind Labs", industry: "SaaS", website: "northwind.io", phone: "+1 415 555 2201", email: "hello@northwind.io", employees: 240, revenue: "$18.4M", manager: "Ava Reynolds", tone: 0 },
-  { id: "lumen", name: "Lumen Studios", industry: "Design", website: "lumen.co", phone: "+1 628 555 9911", email: "team@lumen.co", employees: 55, revenue: "$4.2M", manager: "Marcus Chen", tone: 1 },
-  { id: "halcyon", name: "Halcyon Systems", industry: "Cloud Infra", website: "halcyon.dev", phone: "+91 98765 12345", email: "sales@halcyon.dev", employees: 480, revenue: "$62M", manager: "Priya Natarajan", tone: 2 },
-  { id: "meridian", name: "Meridian & Co", industry: "Finance", website: "meridian.com", phone: "+34 611 22 33 44", email: "info@meridian.com", employees: 1200, revenue: "$210M", manager: "Diego Alvarez", tone: 3 },
-  { id: "aster", name: "Aster Health", industry: "Healthcare", website: "aster.health", phone: "+44 20 7946 0011", email: "care@aster.health", employees: 340, revenue: "$28M", manager: "Sofia Petrov", tone: 4 },
-  { id: "arcadia", name: "Arcadia Media", industry: "Media", website: "arcadia.tv", phone: "+1 312 555 6688", email: "press@arcadia.tv", employees: 88, revenue: "$9.1M", manager: "Jamal Turner", tone: 0 },
-];
 
 type FormState = Omit<Company, "id" | "tone">;
 const EMPTY: FormState = { name: "", industry: "", website: "", phone: "", email: "", employees: 0, revenue: "", manager: "" };
@@ -51,7 +43,7 @@ function CompaniesPage() {
   const [editing, setEditing] = useState<Company | null>(null);
   useOpenCreate("companies", () => { setEditing(null); setModalOpen(true); });
 
-  const combined = useMemo(() => [...added, ...COMPANIES], [added]);
+  const combined = useMemo(() => added, [added]);
   const addedIds = new Set(added.map((c) => c.id));
 
   const industries = useMemo(

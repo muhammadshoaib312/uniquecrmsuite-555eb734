@@ -68,13 +68,6 @@ function collect(): Item[] {
   return items.sort((a, b) => b.when - a.when);
 }
 
-const SEED: Item[] = [
-  { id: "s1", kind: "deal", title: "Deal moved to Negotiation: Globex", meta: "$67,200", when: Date.now() - 90 * 60_000 },
-  { id: "s2", kind: "lead", title: "New lead: Priya Nair", meta: "Northwind", when: Date.now() - 3 * 3600_000 },
-  { id: "s3", kind: "task", title: "Task completed: Send Northwind renewal proposal", meta: "Completed", when: Date.now() - 5 * 3600_000 },
-  { id: "s4", kind: "meeting", title: "Meeting scheduled: Demo — Umbrella Co.", meta: "Today, 2:00 PM", when: Date.now() - 7 * 3600_000 },
-  { id: "s5", kind: "contact", title: "Contact added: Emma Wilson", meta: "Umbrella Co.", when: Date.now() - 26 * 3600_000 },
-];
 
 function timeAgo(ts: number) {
   const s = Math.max(1, Math.floor((Date.now() - ts) / 1000));
@@ -93,12 +86,12 @@ function ActivitiesPage() {
   useEffect(() => {
     const load = () => setDynamic(collect());
     load();
-    const evts = ["uniquecrm:leads-changed", "uniquecrm:contacts-changed", "uniquecrm:companies-changed", "uniquecrm:tasks-changed", "uniquecrm:meetings-changed", "storage"];
+    const evts = ["uniquecrm:leads-changed", "uniquecrm:contacts-changed", "uniquecrm:companies-changed", "uniquecrm:tasks-changed", "uniquecrm:meetings-changed", "uniquecrm:deals-changed", "storage"];
     evts.forEach((e) => window.addEventListener(e, load));
     return () => evts.forEach((e) => window.removeEventListener(e, load));
   }, []);
 
-  const all = useMemo(() => [...dynamic, ...SEED].sort((a, b) => b.when - a.when), [dynamic]);
+  const all = useMemo(() => [...dynamic].sort((a, b) => b.when - a.when), [dynamic]);
   const filtered = filter === "all" ? all : all.filter((i) => i.kind === filter);
 
   return (

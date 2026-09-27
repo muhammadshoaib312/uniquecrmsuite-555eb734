@@ -15,12 +15,6 @@ type Priority = "Low" | "Medium" | "High" | "Urgent";
 type Status = "Open" | "In Progress" | "Waiting" | "Resolved";
 type Ticket = { id: string; subject: string; requester: string; priority: Priority; status: Status; description: string };
 
-const SEED: Ticket[] = [
-  { id: "s1", subject: "Cannot export contacts CSV", requester: "Emma Wilson", priority: "High", status: "In Progress", description: "Export returns empty file." },
-  { id: "s2", subject: "Billing question — INV-2038", requester: "Diego Alvarez", priority: "Medium", status: "Waiting", description: "Needs a copy of the invoice." },
-  { id: "s3", subject: "Add SSO for Okta", requester: "James O'Brien", priority: "Low", status: "Open", description: "Requesting SAML SSO." },
-  { id: "s4", subject: "Sync stopped — HubSpot", requester: "Sarah Johnson", priority: "Urgent", status: "Open", description: "Two-way sync paused overnight." },
-];
 const pTone: Record<Priority, "warning" | "info" | "default" | "brand"> = { Urgent: "warning", High: "warning", Medium: "info", Low: "default" };
 const sTone: Record<Status, "brand" | "info" | "success" | "default"> = { Open: "brand", "In Progress": "info", Waiting: "default", Resolved: "success" };
 type Form = Omit<Ticket, "id">;
@@ -31,7 +25,7 @@ function SupportPage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Form>(EMPTY);
   useOpenCreate("tickets", () => { setForm(EMPTY); setOpen(true); });
-  const combined = [...added, ...SEED];
+  const combined = added;
   const addedIds = new Set(added.map((t) => t.id));
 
   return (

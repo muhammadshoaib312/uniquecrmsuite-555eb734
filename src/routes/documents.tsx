@@ -17,12 +17,6 @@ export const Route = createFileRoute("/documents")({
 
 type Doc = { id: string; name: string; type: string; size: string; owner: string; related: string; created: string };
 
-const SEED: Doc[] = [
-  { id: "s1", name: "Acme MSA v3.pdf", type: "PDF", size: "482 KB", owner: "Ava Chen", related: "Acme Corp", created: "Jul 12, 2026" },
-  { id: "s2", name: "Northwind proposal.docx", type: "DOCX", size: "128 KB", owner: "Marcus Kim", related: "Northwind", created: "Jul 14, 2026" },
-  { id: "s3", name: "Globex pricing.xlsx", type: "XLSX", size: "94 KB", owner: "Priya Nair", related: "Globex", created: "Jul 15, 2026" },
-  { id: "s4", name: "Stark SOC2 report.pdf", type: "PDF", size: "1.2 MB", owner: "Diego Alvarez", related: "Stark Industries", created: "Jul 16, 2026" },
-];
 
 type Form = Omit<Doc, "id" | "created">;
 const EMPTY: Form = { name: "", type: "PDF", size: "0 KB", owner: "You", related: "" };
@@ -33,7 +27,7 @@ function DocumentsPage() {
   const [form, setForm] = useState<Form>(EMPTY);
   const [q, setQ] = useState("");
 
-  const combined = [...added, ...SEED];
+  const combined = added;
   const filtered = combined.filter((d) =>
     !q || d.name.toLowerCase().includes(q.toLowerCase()) || d.related.toLowerCase().includes(q.toLowerCase()),
   );

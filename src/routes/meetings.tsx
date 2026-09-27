@@ -26,14 +26,6 @@ type StoredMeeting = {
   with: string;
 };
 
-const STATIC_MEETINGS: StoredMeeting[] = [
-  { id: "m1", title: "Demo — Umbrella Co.", time: "Today, 2:00 PM", duration: "45m", type: "Video", with: "Emma Wilson" },
-  { id: "m2", title: "Discovery call — Hooli", time: "Today, 4:30 PM", duration: "30m", type: "Call", with: "Lucas Meyer" },
-  { id: "m3", title: "QBR — Acme Corp", time: "Tomorrow, 10:00 AM", duration: "60m", type: "Video", with: "Sarah Johnson" },
-  { id: "m4", title: "Renewal — Soylent", time: "Aug 16, 1:00 PM", duration: "30m", type: "Video", with: "Diego Alvarez" },
-  { id: "m5", title: "Onsite — Stark Industries", time: "Aug 18, 9:00 AM", duration: "3h", type: "Onsite", with: "James O'Brien" },
-  { id: "m6", title: "Kickoff — Globex API", time: "Aug 20, 11:00 AM", duration: "45m", type: "Video", with: "Michael Chen" },
-];
 
 const typeMeta: Record<MeetingType, { icon: typeof Video; tone: "brand" | "info" | "warning" }> = {
   Video: { icon: Video, tone: "brand" },
@@ -48,7 +40,7 @@ function MeetingsPage() {
   const { items: added, add, remove } = useRecordStore<StoredMeeting>("meetings");
   const [modalOpen, setModalOpen] = useState(false);
   useOpenCreate("meetings", () => setModalOpen(true));
-  const combined = useMemo(() => [...added, ...STATIC_MEETINGS], [added]);
+  const combined = useMemo(() => added, [added]);
   const addedIds = new Set(added.map((m) => m.id));
 
   return (
