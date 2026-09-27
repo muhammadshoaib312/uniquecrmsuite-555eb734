@@ -54,34 +54,8 @@ const priorityTone: Record<Priority, string> = {
 };
 
 const initial: Record<Stage, Deal[]> = {
-  "New Lead": [
-    { id: "d1", company: "Wayne Enterprises", contact: "Aiko Tanaka", value: 8400, priority: "Low", due: "Aug 12" },
-    { id: "d2", company: "Hooli", contact: "Lucas Meyer", value: 14000, priority: "Medium", due: "Aug 14" },
-    { id: "d3", company: "Vandelay", contact: "Rahul Desai", value: 22600, priority: "Low", due: "Aug 18" },
-  ],
-  Qualified: [
-    { id: "d4", company: "Northwind", contact: "Priya Nair", value: 18500, priority: "High", due: "Aug 20" },
-    { id: "d5", company: "Pied Piper", contact: "Oliver Grant", value: 42000, priority: "Medium", due: "Aug 22" },
-  ],
-  "Meeting Scheduled": [
-    { id: "d6", company: "Umbrella Co.", contact: "Emma Wilson", value: 56000, priority: "Medium", due: "Aug 24" },
-    { id: "d7", company: "Cyberdyne", contact: "Chen Wei", value: 31000, priority: "High", due: "Aug 25" },
-  ],
-  "Proposal Sent": [
-    { id: "d8", company: "Acme Corp", contact: "Sarah Johnson", value: 42000, priority: "High", due: "Aug 24" },
-    { id: "d9", company: "Stark Industries", contact: "James O'Brien", value: 120000, priority: "High", due: "Aug 28" },
-  ],
-  Negotiation: [
-    { id: "d10", company: "Globex", contact: "Michael Chen", value: 67200, priority: "High", due: "Aug 30" },
-    { id: "d11", company: "Massive Dynamic", contact: "Yara Haddad", value: 88000, priority: "Medium", due: "Sep 4" },
-  ],
-  Won: [
-    { id: "d12", company: "Initech", contact: "Diego Alvarez", value: 9800, priority: "Medium", due: "Aug 8" },
-    { id: "d13", company: "Soylent", contact: "Marta Silva", value: 46000, priority: "Medium", due: "Aug 10" },
-  ],
-  Lost: [
-    { id: "d14", company: "Duff Beer", contact: "Homer S.", value: 5200, priority: "Low", due: "Aug 2" },
-  ],
+  "New Lead": [], Qualified: [], "Meeting Scheduled": [],
+  "Proposal Sent": [], Negotiation: [], Won: [], Lost: [],
 };
 
 const STORAGE_KEY = "uniquecrm:deals-board";
@@ -114,7 +88,7 @@ function DealsPage() {
     try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(board)); } catch {}
   }, [board, hydrated]);
 
-  const totalValue = (Object.values(board).flat().reduce((a, d) => a + d.value, 0) / 1000).toFixed(0);
+  const totalValue = (Object.values(board).flat().reduce((a, d) => a + d.value, 0) / 1000).toFixed(1);
 
   function onDragStart(id: string, from: Stage) { setDragging({ id, from }); }
   function onDragOver(e: React.DragEvent, stage: Stage) {
@@ -165,7 +139,7 @@ function DealsPage() {
     <div className="mx-auto max-w-[1600px]">
       <PageHeader
         title="Deals"
-        subtitle={`$${totalValue}K across ${stages.length} stages · drag cards to move`}
+        subtitle={`$${Number(totalValue) ? totalValue + "K" : "0"} across ${stages.length} stages · drag cards to move`}
         actions={
           <button
             onClick={() => { setEditing(null); setDefaultStage("New Lead"); setModalOpen(true); }}
@@ -179,7 +153,7 @@ function DealsPage() {
 
       <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-4 sm:mx-0 sm:px-0">
         {stages.map((stage) => {
-          const list = board[stage];
+          const list = board[stage] ?? [];
           const stageTotal = (list.reduce((a, d) => a + d.value, 0) / 1000).toFixed(1);
           const isOver = overStage === stage && dragging && dragging.from !== stage;
           return (
@@ -199,7 +173,7 @@ function DealsPage() {
                     {list.length}
                   </span>
                 </div>
-                <p className="mt-0.5 text-[11px] font-medium text-foreground/80">${stageTotal}K</p>
+                <p className="mt-0.5 text-[11px] font-medium text-foreground/80">{Number(stageTotal) ? `${stageTotal}K` : "0"}</p>
               </div>
 
               <div className="flex flex-col gap-2">

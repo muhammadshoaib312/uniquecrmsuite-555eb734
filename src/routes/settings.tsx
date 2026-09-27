@@ -87,7 +87,7 @@ function DemoDataSection() {
   const doReset = () => {
     if (!window.confirm("Clear every locally stored record? This cannot be undone.")) return;
     resetDemoData();
-    setMsg("All local data cleared. Modules are back to their seed content.");
+    setMsg("All local data cleared. All records are now empty.");
     setTimeout(() => setMsg(null), 3200);
   };
   return (
@@ -164,12 +164,12 @@ function CompanySection() {
       <h2 className="text-lg font-semibold">Company Profile</h2>
       <p className="mt-1 text-sm text-muted-foreground">Public information about your workspace.</p>
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Company Name"><Input defaultValue="UniqueCRM Inc." /></Field>
-        <Field label="Website"><Input defaultValue="uniquecrm.io" /></Field>
-        <Field label="Industry"><Input defaultValue="SaaS" /></Field>
-        <Field label="Employees"><Input defaultValue="120" /></Field>
-        <Field label="Contact Email"><Input defaultValue="hello@uniquecrm.io" /></Field>
-        <Field label="Phone"><Input defaultValue="+1 (415) 555-0100" /></Field>
+        <Field label="Company Name"><Input defaultValue="" /></Field>
+        <Field label="Website"><Input defaultValue="" /></Field>
+        <Field label="Industry"><Input defaultValue="" /></Field>
+        <Field label="Employees"><Input defaultValue="" /></Field>
+        <Field label="Contact Email"><Input defaultValue="" /></Field>
+        <Field label="Phone"><Input defaultValue="" /></Field>
       </div>
       <SaveRow />
     </GlassCard>
@@ -177,13 +177,7 @@ function CompanySection() {
 }
 
 function UsersSection() {
-  const users = [
-    { name: "Ava Reynolds", email: "ava@uniquecrm.io", role: "Admin", tone: 0 },
-    { name: "Marcus Chen", email: "marcus@uniquecrm.io", role: "Manager", tone: 1 },
-    { name: "Priya Natarajan", email: "priya@uniquecrm.io", role: "Sales", tone: 2 },
-    { name: "Diego Alvarez", email: "diego@uniquecrm.io", role: "Sales", tone: 3 },
-    { name: "Sofia Petrov", email: "sofia@uniquecrm.io", role: "Viewer", tone: 4 },
-  ];
+  const users: { name: string; email: string; role: string; tone: number }[] = [];
   return (
     <GlassCard>
       <div className="mb-4 flex items-center justify-between">
@@ -194,6 +188,7 @@ function UsersSection() {
         <button className="gradient-brand-bg rounded-xl px-3 py-2 text-sm font-medium text-white glow-shadow-sm">Invite User</button>
       </div>
       <div className="divide-y divide-white/5">
+        {!users.length && <p className="py-10 text-center text-sm text-muted-foreground">No team members to display.</p>}
         {users.map((u) => (
           <div key={u.email} className="flex items-center gap-3 py-3">
             <Avatar name={u.name} tone={u.tone} />
@@ -242,15 +237,15 @@ function EmailSection() {
       <h2 className="text-lg font-semibold">Email Settings</h2>
       <p className="mt-1 text-sm text-muted-foreground">Configure outbound email and signatures.</p>
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="From Name"><Input defaultValue="UniqueCRM Team" /></Field>
-        <Field label="From Address"><Input defaultValue="notifications@uniquecrm.io" /></Field>
-        <Field label="Reply-To"><Input defaultValue="support@uniquecrm.io" /></Field>
-        <Field label="SMTP Host"><Input defaultValue="smtp.uniquecrm.io" /></Field>
+        <Field label="From Name"><Input defaultValue="" /></Field>
+        <Field label="From Address"><Input defaultValue="" /></Field>
+        <Field label="Reply-To"><Input defaultValue="" /></Field>
+        <Field label="SMTP Host"><Input defaultValue="" /></Field>
       </div>
       <Field label="Default Signature">
         <textarea
           rows={4}
-          defaultValue="— The UniqueCRM Team"
+          defaultValue=""
           className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/30"
         />
       </Field>

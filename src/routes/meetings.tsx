@@ -42,6 +42,18 @@ function MeetingsPage() {
   useOpenCreate("meetings", () => setModalOpen(true));
   const combined = useMemo(() => added, [added]);
   const addedIds = new Set(added.map((m) => m.id));
+  const weekStart = new Date();
+  weekStart.setHours(0, 0, 0, 0);
+  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const day = new Date(weekStart);
+    day.setDate(weekStart.getDate() + i);
+    const count = combined.filter((meeting) => {
+      const date = new Date(meeting.time);
+      return !Number.isNaN(date.getTime()) && date.toDateString() === day.toDateString();
+    }).length;
+    return { day: day.getDate(), count };
+  });
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -101,6 +113,7 @@ function MeetingsPage() {
               );
             })}
           </ul>
+          {!combined.length && <div className="py-12 text-center text-sm text-muted-foreground">No meetings scheduled yet.</div>}
         </GlassCard>
 
         <GlassCard>
@@ -114,13 +127,13 @@ function MeetingsPage() {
             ))}
           </div>
           <div className="mt-2 grid grid-cols-7 gap-1">
-            {[3, 5, 2, 4, 1, 0, 0].map((n, i) => (
+            {weekDays.map(({ day, count }, i) => (
               <div
                 key={i}
                 className="relative aspect-square rounded-lg border border-white/5 bg-white/[0.03] p-1"
               >
-                <span className="text-[10px] text-muted-foreground">{11 + i}</span>
-                {n > 0 && (
+                <span className="text-[10px] text-muted-foreground">{day}</span>
+                {count > 0 && (
                   <div
                     className="absolute bottom-1 left-1 right-1 rounded-md text-center text-[9px] font-semibold text-white"
                     style={{
