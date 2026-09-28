@@ -36,17 +36,8 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
-// The global index also includes built-in sample rows. Keep those available elsewhere,
-// but never count or display them as real activity on the dashboard.
-const sampleIds: Record<string, Set<string>> = {
-  leads: new Set(["L-1042", "L-1041", "L-1040", "L-1039", "L-1038", "L-1037", "L-1036", "L-1035", "L-2201", "L-2202", "L-2203"]),
-  deals: new Set([...Array.from({ length: 14 }, (_, i) => `d${i + 1}`), "dd1", "dd2", "dd3", "dd4"]),
-  tasks: new Set(["1", "2", "3", "4", "5", "td1", "td2", "td3"]),
-  meetings: new Set(["m1", "m2", "m3", "m4", "md1", "md2"]),
-};
-
 function savedRecords(items: IndexedRecord[], module: IndexedRecord["module"]) {
-  return items.filter((item) => item.module === module && !sampleIds[module]?.has(item.id.slice(module.length + 1)));
+  return items.filter((item) => item.module === module);
 }
 
 function Dashboard() {

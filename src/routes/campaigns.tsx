@@ -119,7 +119,7 @@ function CampaignsPage() {
                     ) : <span className="text-xs text-muted-foreground">—</span>}
                   </td>
                 </tr>
-              ))}
+              ))}{!combined.length && <tr><td colSpan={8} className="py-12 text-center text-sm text-muted-foreground">No campaigns yet.</td></tr>}
             </tbody>
           </table>
         </div>

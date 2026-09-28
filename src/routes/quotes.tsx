@@ -67,7 +67,7 @@ function QuotesPage() {
                   </div>) : <span className="text-xs text-muted-foreground">—</span>}
                 </td>
               </tr>
-            ))}</tbody>
+            ))}{!combined.length && <tr><td colSpan={6} className="py-12 text-center text-sm text-muted-foreground">No quotes yet.</td></tr>}</tbody>
           </table>
         </div>
       </GlassCard>

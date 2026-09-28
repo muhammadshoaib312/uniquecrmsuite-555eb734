@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Plus, Download, MoreHorizontal } from "lucide-react";
+import { useRecordStore } from "@/lib/record-store";
 import { PageHeader, GlassCard, Badge, StatCard } from "@/components/crm-ui";
 
 export const Route = createFileRoute("/invoices")({
@@ -12,9 +13,12 @@ export const Route = createFileRoute("/invoices")({
   component: InvoicesPage,
 });
 
-const invoices: { id: string; client: string; amount: string; due: string; status: string; tone: "success" | "info" | "warning" | "default" }[] = [];
+type Invoice = { id: string; client: string; amount: number | string; due: string; status: string };
 
 function InvoicesPage() {
+  const { items: invoices } = useRecordStore<Invoice>("invoices");
+  const amount = (inv: Invoice) => Number(String(inv.amount).replace(/[^0-9.]/g, "")) || 0;
+  const total = (predicate: (inv: Invoice) => boolean) => `$${invoices.filter(predicate).reduce((sum, inv) => sum + amount(inv), 0).toLocaleString()}`;
   return (
     <div className="mx-auto max-w-7xl">
       <PageHeader
@@ -29,9 +33,9 @@ function InvoicesPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Outstanding" value="$0" />
-        <StatCard label="Paid this month" value="$0" />
-        <StatCard label="Overdue" value="$0" />
+        <StatCard label="Outstanding" value={total((inv) => inv.status === "Sent")} />
+        <StatCard label="Paid this month" value={total((inv) => inv.status === "Paid" && String(inv.due).slice(0, 7) === new Date().toISOString().slice(0, 7))} />
+        <StatCard label="Overdue" value={total((inv) => inv.status === "Overdue")} />
       </div>
 
       <GlassCard className="mt-6">
@@ -52,10 +56,10 @@ function InvoicesPage() {
                 <tr key={inv.id} className="border-t border-white/5">
                   <td className="py-3 pr-4 font-mono text-xs">{inv.id}</td>
                   <td className="py-3 pr-4 font-medium">{inv.client}</td>
-                  <td className="py-3 pr-4 font-semibold">{inv.amount}</td>
+                  <td className="py-3 pr-4 font-semibold">{`$${amount(inv).toLocaleString()}`}</td>
                   <td className="py-3 pr-4 text-muted-foreground">{inv.due}</td>
                   <td className="py-3 pr-4">
-                    <Badge tone={inv.tone}>{inv.status}</Badge>
+                    <Badge tone={inv.status === "Paid" ? "success" : inv.status === "Overdue" ? "warning" : inv.status === "Sent" ? "info" : "default"}>{inv.status}</Badge>
                   </td>
                   <td className="py-3 text-right">
                     <div className="flex justify-end gap-1">
@@ -69,6 +73,7 @@ function InvoicesPage() {
                   </td>
                 </tr>
               ))}
+              {!invoices.length && <tr><td colSpan={6} className="py-12 text-center text-sm text-muted-foreground">No invoices yet.</td></tr>}
             </tbody>
           </table>
         </div>
