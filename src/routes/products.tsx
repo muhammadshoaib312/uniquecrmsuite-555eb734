@@ -111,7 +111,7 @@ function ProductsPage() {
                     ) : <span className="text-xs text-muted-foreground">—</span>}
                   </td>
                 </tr>
-              ))}
+              ))}{!combined.length && <tr><td colSpan={7} className="py-12 text-center text-sm text-muted-foreground">No products yet.</td></tr>}
             </tbody>
           </table>
         </div>

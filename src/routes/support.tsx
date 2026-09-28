@@ -59,7 +59,7 @@ function SupportPage() {
                   <button onClick={() => confirm("Delete this ticket?") && remove(t.id)} className="glass grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-rose-300"><Trash2 className="h-3.5 w-3.5" /></button>
                 )}</td>
               </tr>
-            ))}</tbody>
+            ))}{!combined.length && <tr><td colSpan={5} className="py-12 text-center text-sm text-muted-foreground">No tickets yet.</td></tr>}</tbody>
           </table>
         </div>
       </GlassCard>
