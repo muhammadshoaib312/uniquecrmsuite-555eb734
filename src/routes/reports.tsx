@@ -99,7 +99,7 @@ function ReportsPage() {
       return { leads, deals, won, lost, revenue, converted, newLeads, months, pipeline, team,
         byStatus: byKey(leads, "status", "Unspecified"), bySource: byKey(leads, "source", "Other"), error: null as string | null };
     } catch (e) {
-      return { error: e instanceof Error ? e.message : "Unable to build report" } as const;
+      return { error: e instanceof Error ? e.message : "Unable to build report" } as never;
     }
   }, [allLeads, allDeals, range, owner, source, dealStatus]);
 
@@ -188,7 +188,7 @@ function ReportsPage() {
             <div className="space-y-3">{report.bySource.map((s) => <Meter key={s.label} label={s.label} value={s.count} total={report.leads.length} />)}</div>
           </ChartCard>
           <ChartCard title="Lead conversion rate" empty={!report.leads.length}>
-            <div className="flex flex-col items-center justify-center gap-2 py-6"><div className="gradient-brand-text text-5xl font-bold">{pct(report.converted, report.leads.length)}%</div><p className="text-sm text-muted-foreground">{report.converted} of {report.leads.length} leads converted</p></div>
+            <div className="flex flex-col items-center justify-center gap-2 py-6"><div className="gradient-brand text-5xl font-bold">{pct(report.converted, report.leads.length)}%</div><p className="text-sm text-muted-foreground">{report.converted} of {report.leads.length} leads converted</p></div>
           </ChartCard>
           <ChartCard title="New leads over time" className="md:col-span-2 lg:col-span-3" empty={!report.months.some((m) => m.leads)}>
             <Bars data={report.months.map((m) => ({ label: m.label, value: m.leads, hint: `${m.leads} leads` }))} />
