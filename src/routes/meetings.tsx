@@ -142,7 +142,7 @@ function MeetingsPage() {
                       boxShadow: "0 0 8px oklch(0.72 0.25 340 / 0.5)",
                     }}
                   >
-                    {n}
+                    {count}
                   </div>
                 )}
               </div>
