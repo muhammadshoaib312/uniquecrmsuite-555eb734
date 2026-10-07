@@ -1,4 +1,6 @@
-- [ ] Remove built-in business records from all CRM lists, details, global search and alerts while keeping user-created records.
-- [ ] Replace fabricated charts, totals and calendar activity with saved-data values or empty states.
-- [ ] Verify empty and populated workflows across existing screens without changing AI Assistant or Automation.
-- [ ] Complete Reports & Analytics overview, charts, filters, export and states without modifying other modules.
+Current scope: Reports & Analytics only; previous cross-module cleanup is outside this request.
+
+- [x] Complete saved-record overview, sales/conversion/pipeline charts and team summary.
+- [x] Add date, category, owner, source and deal-status filters with CSV and print/PDF export.
+- [x] Verify empty, populated, error/retry and desktop/tablet/mobile states, including a lead created through the existing form.
+- [x] Preserve navigation and completed CRM modules.
