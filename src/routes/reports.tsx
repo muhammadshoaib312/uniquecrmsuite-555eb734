@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, type ReactNode } from "react";
 import {
-  DollarSign, TrendingUp, TrendingDown, Target, Download, FileText, Users, UserPlus,
-  UserCheck, Briefcase, Percent, AlertTriangle, BarChart3, CheckCircle2,
+  DollarSign, TrendingUp, Download, FileText, Users,
+  UserCheck, Briefcase, AlertTriangle, BarChart3, CheckCircle2,
 } from "lucide-react";
 import { PageHeader, GlassCard, StatCard } from "@/components/crm-ui";
 import type { IndexedRecord } from "@/lib/global-index";
@@ -34,15 +34,16 @@ const STAGES = ["New", "Qualified", "Proposal", "Negotiation", "Won", "Lost"];
 
 function recordDate(r: IndexedRecord): Date | null {
   const raw = r.raw as Record<string, unknown>;
-  for (const k of ["closedAt", "completedAt", "convertedAt", "created", "createdAt", "date"]) {
+  const keys = r.module === "tasks" ? ["completedAt"] : ["closedAt", "convertedAt", "created", "createdAt", "date"];
+  for (const k of keys) {
     const d = new Date(str(raw[k]));
     if (str(raw[k]) && !Number.isNaN(d.getTime())) return d;
   }
   return null;
 }
-const isWon = (d: IndexedRecord) => /won/i.test(str(d.raw.stage));
-const isLost = (d: IndexedRecord) => /lost/i.test(str(d.raw.stage));
-const isConverted = (l: IndexedRecord) => /won|converted/i.test(str(l.raw.status));
+const isWon = (d: IndexedRecord) => /^won$/i.test(str(d.raw.stage));
+const isLost = (d: IndexedRecord) => /^lost$/i.test(str(d.raw.stage));
+const isConverted = (l: IndexedRecord) => /^(won|converted)$/i.test(str(l.raw.status));
 
 function ReportsPage() {
   const { records: index, loading, error, refresh } = useReportRecords();
@@ -117,10 +118,9 @@ function ReportsPage() {
       ["Overview", "Won deals", report.won.length], ["Overview", "Lost deals", report.lost.length],
       ["Overview", "Total revenue", report.revenue], ["Overview", "Open deals", report.open], ["Overview", "Tasks completed", report.completed],
       ["Filters", "Date range", RANGES.find((r) => r.id === range)?.label], ["Filters", "Category", category], ["Filters", "Owner", owner], ["Filters", "Source", source], ["Filters", "Deal status", dealStatus], ["Overview", "Conversion rate %", pct(report.converted, report.leads.length)],
-      ...report.months.map((m) => ["Revenue by month", m.label, m.revenue]),
-      ...report.pipeline.map((p) => ["Pipeline", p.stage, p.value]),
-      ...report.bySource.map((s) => ["Lead source", s.label, s.count]),
-      ...report.team.map((t) => ["Team revenue", t.name, t.revenue]),
+      ...(category === "All reports" || category === "Sales" ? [...report.months.map((m) => ["Revenue by month", m.label, m.revenue]), ...report.pipeline.map((p) => ["Pipeline", p.stage, p.value])] : []),
+      ...(category === "All reports" || category === "Leads" ? [...report.bySource.map((s) => ["Lead source", s.label, s.count]), ...report.byStatus.map((s) => ["Lead status", s.label, s.count])] : []),
+      ...(category === "All reports" || category === "Team" ? report.team.flatMap((t) => [["Team revenue", t.name, t.revenue], ["Team won deals", t.name, t.won], ["Team win rate %", t.name, t.rate]]) : []),
     ];
     const url = URL.createObjectURL(new Blob([rows.map((r) => r.map(esc).join(",")).join("\n")], { type: "text/csv" }));
     const a = document.createElement("a"); a.href = url; a.download = `uniquecrm-report-${new Date().toISOString().slice(0, 10)}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -206,7 +206,7 @@ function ReportsPage() {
       {(category === "All reports" || category === "Team") && <Section title="Team performance">
         <ChartCard title="Sales by user" empty={!report.team.length} emptyText="No assigned owners in this report">
           <div className="-mx-2 overflow-x-auto"><table className="w-full min-w-[560px] text-sm">
-            <thead><tr className="text-left text-xs uppercase tracking-wider text-muted-foreground"><th className="px-2 pb-3">User</th><th className="px-2 pb-3 text-right">Leads assigned</th><th className="px-2 pb-3 text-right">Deals won</th><th className="px-2 pb-3 text-right">Revenue</th><th className="px-2 pb-3 text-right">Conversion</th></tr></thead>
+            <thead><tr className="text-left text-xs uppercase tracking-wider text-muted-foreground"><th className="px-2 pb-3">User</th><th className="px-2 pb-3 text-right">Leads assigned</th><th className="px-2 pb-3 text-right">Deals won</th><th className="px-2 pb-3 text-right">Revenue</th><th className="px-2 pb-3 text-right">Win rate</th></tr></thead>
             <tbody>{report.team.map((t) => <tr key={t.name} className="border-t border-border/40"><td className="px-2 py-3 font-medium">{t.name}</td><td className="px-2 py-3 text-right">{t.leads}</td><td className="px-2 py-3 text-right">{t.won}</td><td className="px-2 py-3 text-right font-semibold">{money(t.revenue)}</td><td className="px-2 py-3 text-right">{t.rate}%</td></tr>)}</tbody>
           </table></div>
         </ChartCard>
@@ -216,7 +216,7 @@ function ReportsPage() {
 }
 
 function Filter({ label, children }: { label: string; children: ReactNode }) {
-  return <label className="flex min-w-0 flex-col gap-1"><span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</span>{children}</label>;
+  return <label className="flex min-w-0 flex-col gap-1"><span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</span><span className="sr-only"> </span>{children}</label>;
 }
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return <section className="mb-6"><h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>{children}</section>;
@@ -226,11 +226,11 @@ function ChartCard({ title, children, empty, emptyText = "No data for this repor
 }
 function Bars({ data }: { data: { label: string; value: number; hint: string }[] }) {
   const peak = Math.max(1, ...data.map((d) => d.value));
-  return <div className="flex h-52 items-end gap-2 overflow-x-auto pb-2 sm:gap-3">{data.map((d) => <div key={d.label} className="flex h-full min-w-10 flex-1 flex-col items-center justify-end gap-2"><div className="w-full rounded-t-lg gradient-brand-bg motion-safe:transition-all" style={{ height: `${Math.max(0, (d.value / peak) * 85)}%` }} title={d.hint} /><span className="text-[10px] text-muted-foreground sm:text-xs">{d.label}</span></div>)}</div>;
+  return <div role="img" aria-label={data.map((d) => `${d.label}: ${d.hint}`).join("; ")} className="flex h-52 items-end gap-2 overflow-x-auto pb-2 sm:gap-3">{data.map((d) => <div key={d.label} className="flex h-full min-w-10 flex-1 flex-col items-center justify-end gap-2"><div className="w-full max-w-16 rounded-t-lg gradient-brand-bg motion-safe:transition-all" style={{ height: `${Math.max(0, (d.value / peak) * 85)}%` }} title={d.hint} /><span className="text-[10px] text-muted-foreground sm:text-xs">{d.label}</span></div>)}</div>;
 }
 function Meter({ label, value, total, display, muted }: { label: string; value: number; total: number; display?: string; muted?: boolean }) {
   return <div><div className="mb-1 flex justify-between gap-2 text-sm"><span className="truncate text-muted-foreground">{label}</span><span className="font-semibold">{display ?? `${pct(value, total)}%`}</span></div><div className="h-2 overflow-hidden rounded-full bg-muted/40"><div className={`h-full rounded-full ${muted ? "bg-muted-foreground/40" : "gradient-brand-bg"}`} style={{ width: `${total ? (value / total) * 100 : 0}%` }} /></div></div>;
 }
 function LoadingState() {
-  return <div className="space-y-5" aria-busy="true"><div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="glass h-28 animate-pulse rounded-2xl" />)}</div><div className="grid grid-cols-1 gap-5 lg:grid-cols-3"><div className="glass h-72 animate-pulse rounded-2xl lg:col-span-2" /><div className="glass h-72 animate-pulse rounded-2xl" /></div></div>;
+  return <div className="space-y-5" aria-busy="true" role="status" aria-label="Loading reports"><div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="glass h-28 motion-safe:animate-pulse rounded-2xl" />)}</div><div className="grid grid-cols-1 gap-5 lg:grid-cols-3"><div className="glass h-72 motion-safe:animate-pulse rounded-2xl lg:col-span-2" /><div className="glass h-72 motion-safe:animate-pulse rounded-2xl" /></div></div>;
 }
