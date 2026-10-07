@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
-  DollarSign, TrendingUp, TrendingDown, Target, Download, FileText, Users, UserPlus,
-  UserCheck, Briefcase, Percent, AlertTriangle, BarChart3,
+  DollarSign, TrendingUp, Download, FileText, Users,
+  UserCheck, Briefcase, AlertTriangle, BarChart3, CheckCircle2,
 } from "lucide-react";
 import { PageHeader, GlassCard, StatCard } from "@/components/crm-ui";
-import { useGlobalIndex, type IndexedRecord } from "@/lib/global-index";
+import type { IndexedRecord } from "@/lib/global-index";
+import { useReportRecords } from "@/hooks/useReportRecords";
+import { Button } from "@/components/ui-kit";
 
 export const Route = createFileRoute("/reports")({
   head: () => ({ meta: [
@@ -32,53 +34,57 @@ const STAGES = ["New", "Qualified", "Proposal", "Negotiation", "Won", "Lost"];
 
 function recordDate(r: IndexedRecord): Date | null {
   const raw = r.raw as Record<string, unknown>;
-  for (const k of ["created", "createdAt", "due", "date"]) {
+  const keys = r.module === "tasks" ? ["completedAt"] : ["closedAt", "convertedAt", "created", "createdAt", "date"];
+  for (const k of keys) {
     const d = new Date(str(raw[k]));
     if (str(raw[k]) && !Number.isNaN(d.getTime())) return d;
   }
-  const m = /(\d{10,})/.exec(r.id);
-  if (m) { const d = new Date(Number(m[1])); if (!Number.isNaN(d.getTime())) return d; }
-  const b36 = /-([a-z0-9]{8})\d{0,3}$/.exec(r.id);
-  if (b36) { const d = new Date(parseInt(b36[1], 36)); if (d.getFullYear() > 2015 && d.getFullYear() < 2100) return d; }
   return null;
 }
-const isWon = (d: IndexedRecord) => /won/i.test(str(d.raw.stage));
-const isLost = (d: IndexedRecord) => /lost/i.test(str(d.raw.stage));
-const isConverted = (l: IndexedRecord) => /won|converted/i.test(str(l.raw.status));
+const isWon = (d: IndexedRecord) => /^won$/i.test(str(d.raw.stage));
+const isLost = (d: IndexedRecord) => /^lost$/i.test(str(d.raw.stage));
+const isConverted = (l: IndexedRecord) => /^(won|converted)$/i.test(str(l.raw.status));
 
 function ReportsPage() {
-  const index = useGlobalIndex();
-  const [ready, setReady] = useState(false);
-  useEffect(() => { const t = setTimeout(() => setReady(true), 150); return () => clearTimeout(t); }, []);
-  const [range, setRange] = useState("6m");
+  const { records: index, loading, error, refresh } = useReportRecords();
+  const [category, setCategory] = useState("All reports");
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [range, setRange] = useState("all");
   const [owner, setOwner] = useState("All");
   const [source, setSource] = useState("All");
   const [dealStatus, setDealStatus] = useState("All");
 
   const allLeads = index.filter((i) => i.module === "leads");
   const allDeals = index.filter((i) => i.module === "deals");
-  const owners = [...new Set([...allLeads, ...allDeals].map((r) => str(r.raw.owner)).filter(Boolean))].sort();
+  const allTasks = index.filter((i) => i.module === "tasks");
+  const owners = [...new Set([...allLeads, ...allDeals, ...allTasks].map((r) => str(r.raw.owner ?? r.raw.assignee)).filter(Boolean))].sort();
   const sourcesList = [...new Set(allLeads.map((l) => str(l.raw.source) || "Other"))].sort();
 
   const report = useMemo(() => {
-    try {
       const days = RANGES.find((r) => r.id === range)?.days ?? 0;
-      const since = days ? Date.now() - days * 86400000 : 0;
-      const inRange = (r: IndexedRecord) => { if (!since) return true; const d = recordDate(r); return !d || d.getTime() >= since; };
-      const ownerOk = (r: IndexedRecord) => owner === "All" || str(r.raw.owner) === owner;
+      const now = new Date();
+      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime() - 1;
+      const since = days ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - days + 1).getTime() : 0;
+      const inRange = (r: IndexedRecord) => { if (!since) return true; const d = recordDate(r); return !!d && d.getTime() >= since && d.getTime() <= end; };
+      const ownerOk = (r: IndexedRecord) => owner === "All" || str(r.raw.owner ?? r.raw.assignee) === owner;
       const leads = allLeads.filter((l) => inRange(l) && ownerOk(l) && (source === "All" || (str(l.raw.source) || "Other") === source));
       const deals = allDeals.filter((d) => inRange(d) && ownerOk(d) && (dealStatus === "All" || (dealStatus === "Won" ? isWon(d) : dealStatus === "Lost" ? isLost(d) : !isWon(d) && !isLost(d))));
+      const tasks = allTasks.filter((t) => inRange(t) && ownerOk(t));
+      const completed = tasks.filter((t) => /^completed$/i.test(str(t.raw.status))).length;
       const won = deals.filter(isWon), lost = deals.filter(isLost);
       const revenue = won.reduce((s, d) => s + Number(d.raw.value ?? 0), 0);
       const converted = leads.filter(isConverted).length;
       const newLeads = leads.filter((l) => /^new$/i.test(str(l.raw.status))).length;
-      const months = Array.from({ length: 6 }, (_, i) => {
-        const d = new Date(new Date().getFullYear(), new Date().getMonth() - 5 + i, 1);
+      const dates = [...leads, ...deals].map(recordDate).filter((d): d is Date => !!d);
+      const start = since ? new Date(since) : dates.length ? new Date(Math.min(...dates.map((d) => d.getTime()))) : new Date(now.getFullYear(), now.getMonth() - 5, 1);
+      const count = Math.max(1, Math.min(24, (now.getFullYear() - start.getFullYear()) * 12 + now.getMonth() - start.getMonth() + 1));
+      const months = Array.from({ length: count }, (_, i) => {
+        const d = new Date(now.getFullYear(), now.getMonth() - count + 1 + i, 1);
         const same = (r: IndexedRecord) => { const x = recordDate(r); return !!x && x.getMonth() === d.getMonth() && x.getFullYear() === d.getFullYear(); };
         return {
-          label: d.toLocaleDateString(undefined, { month: "short" }),
+          label: d.toLocaleDateString(undefined, { month: "short", year: "2-digit" }),
           revenue: won.filter(same).reduce((s, x) => s + Number(x.raw.value ?? 0), 0),
-          won: won.filter(same).length, lost: lost.filter(same).length, leads: leads.filter(same).length,
+          won: won.filter(same).length, lost: lost.filter(same).length, leads: leads.filter(same).length, converted: leads.filter(same).filter(isConverted).length,
         };
       });
       const byKey = (list: IndexedRecord[], key: string, fallback: string) => {
@@ -96,70 +102,71 @@ function ReportsPage() {
         const myClosed = deals.filter((d) => str(d.raw.owner) === name && (isWon(d) || isLost(d))).length;
         return { name, leads: myLeads.length, won: myWon.length, revenue: myWon.reduce((s, d) => s + Number(d.raw.value ?? 0), 0), rate: pct(myWon.length, myClosed) };
       }).sort((a, b) => b.revenue - a.revenue);
-      return { leads, deals, won, lost, revenue, converted, newLeads, months, pipeline, team,
-        byStatus: byKey(leads, "status", "Unspecified"), bySource: byKey(leads, "source", "Other"), error: null as string | null };
-    } catch (e) {
-      return { error: e instanceof Error ? e.message : "Unable to build report" } as never;
-    }
-  }, [allLeads, allDeals, range, owner, source, dealStatus]);
+      return { leads, deals, tasks, completed, open: deals.length - won.length - lost.length, won, lost, revenue, converted, newLeads, months, pipeline, team,
+        byStatus: byKey(leads, "status", "Unspecified"), bySource: byKey(leads, "source", "Other"), error };
+  }, [index, range, owner, source, dealStatus, error]);
 
   const exportCsv = () => {
     if (report.error) return;
+    setExportError(null);
+    try {
     const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
     const rows = [
       ["Section", "Label", "Value"],
-      ["Overview", "Total leads", report.leads.length], ["Overview", "New leads", report.newLeads],
+      ["Overview", "Total leads", report.leads.length], ["Overview", "New customers (converted leads)", report.converted],
       ["Overview", "Converted leads", report.converted], ["Overview", "Total deals", report.deals.length],
       ["Overview", "Won deals", report.won.length], ["Overview", "Lost deals", report.lost.length],
-      ["Overview", "Total revenue", report.revenue], ["Overview", "Conversion rate %", pct(report.converted, report.leads.length)],
-      ...report.months.map((m) => ["Revenue by month", m.label, m.revenue]),
-      ...report.pipeline.map((p) => ["Pipeline", p.stage, p.value]),
-      ...report.bySource.map((s) => ["Lead source", s.label, s.count]),
-      ...report.team.map((t) => ["Team revenue", t.name, t.revenue]),
+      ["Overview", "Total revenue", report.revenue], ["Overview", "Open deals", report.open], ["Overview", "Tasks completed", report.completed],
+      ["Filters", "Date range", RANGES.find((r) => r.id === range)?.label], ["Filters", "Category", category], ["Filters", "Owner", owner], ["Filters", "Source", source], ["Filters", "Deal status", dealStatus], ["Overview", "Conversion rate %", pct(report.converted, report.leads.length)],
+      ...(category === "All reports" || category === "Sales" ? [...report.months.map((m) => ["Revenue by month", m.label, m.revenue]), ...report.pipeline.map((p) => ["Pipeline", p.stage, p.value])] : []),
+      ...(category === "All reports" || category === "Leads" ? [...report.bySource.map((s) => ["Lead source", s.label, s.count]), ...report.byStatus.map((s) => ["Lead status", s.label, s.count])] : []),
+      ...(category === "All reports" || category === "Team" ? report.team.flatMap((t) => [["Team revenue", t.name, t.revenue], ["Team won deals", t.name, t.won], ["Team win rate %", t.name, t.rate]]) : []),
     ];
     const url = URL.createObjectURL(new Blob([rows.map((r) => r.map(esc).join(",")).join("\n")], { type: "text/csv" }));
-    const a = document.createElement("a"); a.href = url; a.download = `uniquecrm-report-${new Date().toISOString().slice(0, 10)}.csv`; a.click(); URL.revokeObjectURL(url);
+    const a = document.createElement("a"); a.href = url; a.download = `uniquecrm-report-${new Date().toISOString().slice(0, 10)}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch { setExportError("The report could not be exported. Please try again."); }
   };
 
-  const hasData = !report.error && (report.leads.length > 0 || report.deals.length > 0);
+  const hasData = !report.error && (report.leads.length > 0 || report.deals.length > 0 || report.tasks.length > 0);
   const select = "glass min-w-0 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40 [&>option]:bg-background";
 
   return <div className="mx-auto max-w-7xl">
     <PageHeader title="Reports & Analytics" subtitle="Sales, lead and team performance from your CRM records." actions={<>
-      <button onClick={exportCsv} disabled={!hasData} className="glass inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm disabled:opacity-50"><Download className="h-4 w-4" /><span className="hidden sm:inline">Export CSV</span></button>
-      <button onClick={() => window.print()} disabled={!hasData} title="Opens your browser's print dialog — choose “Save as PDF”" className="gradient-brand-bg inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-white glow-shadow-sm disabled:opacity-50"><FileText className="h-4 w-4" /><span className="hidden sm:inline">Export PDF</span></button>
+      <Button variant="secondary" aria-label="Export CSV report" onClick={exportCsv} disabled={loading || !hasData} className="glass inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm disabled:opacity-50"><Download className="h-4 w-4" /><span className="hidden sm:inline">Export CSV</span></Button>
+      <Button aria-label="Export PDF report" onClick={() => window.print()} disabled={loading || !hasData} title="Opens your browser's print dialog — choose “Save as PDF”" className="gradient-brand-bg inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium glow-shadow-sm disabled:opacity-50"><FileText className="h-4 w-4" /><span className="hidden sm:inline">Export PDF</span></Button>
     </>} />
 
     <GlassCard className="mb-5 !p-4">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Filter label="Date range"><select className={select} value={range} onChange={(e) => setRange(e.target.value)}>{RANGES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}</select></Filter>
-        <Filter label="User / team"><select className={select} value={owner} onChange={(e) => setOwner(e.target.value)}><option>All</option>{owners.map((o) => <option key={o}>{o}</option>)}</select></Filter>
-        <Filter label="Lead source"><select className={select} value={source} onChange={(e) => setSource(e.target.value)}><option>All</option>{sourcesList.map((o) => <option key={o}>{o}</option>)}</select></Filter>
-        <Filter label="Deal status"><select className={select} value={dealStatus} onChange={(e) => setDealStatus(e.target.value)}>{DEAL_STATUSES.map((o) => <option key={o}>{o}</option>)}</select></Filter>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <Filter label="Report category"><select aria-label="Report category" className={select} value={category} onChange={(e) => setCategory(e.target.value)}>{["All reports", "Sales", "Leads", "Team"].map((c) => <option key={c}>{c}</option>)}</select></Filter>
+        <Filter label="Date range"><select aria-label="Date range" className={select} value={range} onChange={(e) => setRange(e.target.value)}>{RANGES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}</select></Filter>
+        <Filter label="User / team"><select aria-label="User / team" className={select} value={owner} onChange={(e) => setOwner(e.target.value)}><option>All</option>{owners.map((o) => <option key={o}>{o}</option>)}</select></Filter>
+        <Filter label="Lead source"><select aria-label="Lead source" className={select} value={source} onChange={(e) => setSource(e.target.value)}><option>All</option>{sourcesList.map((o) => <option key={o}>{o}</option>)}</select></Filter>
+        <Filter label="Deal status"><select aria-label="Deal status" className={select} value={dealStatus} onChange={(e) => setDealStatus(e.target.value)}>{DEAL_STATUSES.map((o) => <option key={o}>{o}</option>)}</select></Filter>
       </div>
     </GlassCard>
 
-    {!ready ? <LoadingState /> : report.error ? (
-      <GlassCard><div className="flex flex-col items-center gap-3 py-16 text-center"><AlertTriangle className="h-8 w-8 text-rose-400" /><p className="font-semibold">We couldn't build this report</p><p className="text-sm text-muted-foreground">{report.error}</p><button onClick={() => { setRange("6m"); setOwner("All"); setSource("All"); setDealStatus("All"); }} className="glass rounded-xl px-4 py-2 text-sm">Reset filters</button></div></GlassCard>
+    {exportError && <p role="alert" className="mb-4 text-sm text-destructive">{exportError}</p>}
+    {loading ? <LoadingState /> : report.error ? (
+      <GlassCard><div className="flex flex-col items-center gap-3 py-16 text-center"><AlertTriangle className="h-8 w-8 text-destructive" /><p className="font-semibold">We couldn't build this report</p><p role="alert" className="text-sm text-muted-foreground">{report.error}</p><Button variant="secondary" onClick={() => void refresh()}>Try again</Button></div></GlassCard>
     ) : <>
       <Section title="Reports overview">
-        <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <StatCard label="Total Leads" value={String(report.leads.length)} icon={<Users className="h-4 w-4" />} />
-          <StatCard label="New Leads" value={String(report.newLeads)} icon={<UserPlus className="h-4 w-4" />} />
-          <StatCard label="Converted Leads" value={String(report.converted)} icon={<UserCheck className="h-4 w-4" />} />
-          <StatCard label="Conversion Rate" value={`${pct(report.converted, report.leads.length)}%`} icon={<Percent className="h-4 w-4" />} />
-          <StatCard label="Total Deals" value={String(report.deals.length)} icon={<Briefcase className="h-4 w-4" />} />
+          <StatCard label="New Customers" value={String(report.converted)} icon={<UserCheck className="h-4 w-4" />} />
+          <StatCard label="Open Deals" value={String(report.open)} icon={<Briefcase className="h-4 w-4" />} />
           <StatCard label="Won Deals" value={String(report.won.length)} icon={<TrendingUp className="h-4 w-4" />} />
-          <StatCard label="Lost Deals" value={String(report.lost.length)} icon={<TrendingDown className="h-4 w-4" />} />
+          <StatCard label="Tasks Completed" value={String(report.completed)} icon={<CheckCircle2 className="h-4 w-4" />} />
           <StatCard label="Total Revenue" value={money(report.revenue)} icon={<DollarSign className="h-4 w-4" />} />
         </div>
       </Section>
+      <p className="mb-5 text-xs text-muted-foreground">New customers: converted leads. Revenue: won deals. Dated filters exclude undated records; task due dates are not completion dates.</p>
 
-      {!hasData && <GlassCard className="mb-6"><div className="flex flex-col items-center gap-2 py-10 text-center"><BarChart3 className="h-8 w-8 text-muted-foreground" /><p className="font-semibold">No report data yet</p><p className="max-w-md text-sm text-muted-foreground">Add leads and deals, or adjust the filters above. Charts fill in automatically from your saved records.</p></div></GlassCard>}
+      {!hasData && <GlassCard className="mb-6"><div className="flex flex-col items-center gap-2 py-10 text-center"><BarChart3 className="h-8 w-8 text-muted-foreground" /><p className="font-semibold">No report data yet</p><p className="max-w-md text-sm text-muted-foreground">No saved records match the selected filters.</p></div></GlassCard>}
 
-      <Section title="Sales analytics">
+      {(category === "All reports" || category === "Sales") && <Section title="Sales analytics">
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-          <ChartCard title="Revenue over time" className="lg:col-span-2" empty={!report.months.some((m) => m.revenue)}>
+          <ChartCard title="Sales performance" className="lg:col-span-2" empty={!report.months.some((m) => m.revenue)}>
             <Bars data={report.months.map((m) => ({ label: m.label, value: m.revenue, hint: money(m.revenue) }))} />
           </ChartCard>
           <ChartCard title="Won vs lost" empty={!report.won.length && !report.lost.length}>
@@ -177,9 +184,9 @@ function ReportsPage() {
               <tbody>{report.months.map((m) => <tr key={m.label} className="border-t border-border/40"><td className="py-2">{m.label}</td><td className="py-2 text-right">{m.leads}</td><td className="py-2 text-right">{m.won}</td><td className="py-2 text-right">{m.lost}</td></tr>)}</tbody></table></div>
           </ChartCard>
         </div>
-      </Section>
+      </Section>}
 
-      <Section title="Lead analytics">
+      {(category === "All reports" || category === "Leads") && <Section title="Lead analytics">
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
           <ChartCard title="Leads by status" empty={!report.leads.length}>
             <div className="space-y-3">{report.byStatus.map((s) => <Meter key={s.label} label={s.label} value={s.count} total={report.leads.length} display={String(s.count)} />)}</div>
@@ -188,22 +195,22 @@ function ReportsPage() {
             <div className="space-y-3">{report.bySource.map((s) => <Meter key={s.label} label={s.label} value={s.count} total={report.leads.length} />)}</div>
           </ChartCard>
           <ChartCard title="Lead conversion rate" empty={!report.leads.length}>
-            <div className="flex flex-col items-center justify-center gap-2 py-6"><div className="gradient-brand text-5xl font-bold">{pct(report.converted, report.leads.length)}%</div><p className="text-sm text-muted-foreground">{report.converted} of {report.leads.length} leads converted</p></div>
+            <div className="space-y-5"><Meter label="Converted" value={report.converted} total={report.leads.length} /><Meter label="Not converted" value={report.leads.length - report.converted} total={report.leads.length} muted /><p className="text-sm text-muted-foreground">{report.converted} of {report.leads.length} leads converted</p></div>
           </ChartCard>
           <ChartCard title="New leads over time" className="md:col-span-2 lg:col-span-3" empty={!report.months.some((m) => m.leads)}>
             <Bars data={report.months.map((m) => ({ label: m.label, value: m.leads, hint: `${m.leads} leads` }))} />
           </ChartCard>
         </div>
-      </Section>
+      </Section>}
 
-      <Section title="Team performance">
-        <ChartCard title="Sales by user" empty={!report.team.length} emptyText="Assign owners to leads and deals to see team performance">
+      {(category === "All reports" || category === "Team") && <Section title="Team performance">
+        <ChartCard title="Sales by user" empty={!report.team.length} emptyText="No assigned owners in this report">
           <div className="-mx-2 overflow-x-auto"><table className="w-full min-w-[560px] text-sm">
-            <thead><tr className="text-left text-xs uppercase tracking-wider text-muted-foreground"><th className="px-2 pb-3">User</th><th className="px-2 pb-3 text-right">Leads assigned</th><th className="px-2 pb-3 text-right">Deals won</th><th className="px-2 pb-3 text-right">Revenue</th><th className="px-2 pb-3 text-right">Conversion</th></tr></thead>
+            <thead><tr className="text-left text-xs uppercase tracking-wider text-muted-foreground"><th className="px-2 pb-3">User</th><th className="px-2 pb-3 text-right">Leads assigned</th><th className="px-2 pb-3 text-right">Deals won</th><th className="px-2 pb-3 text-right">Revenue</th><th className="px-2 pb-3 text-right">Win rate</th></tr></thead>
             <tbody>{report.team.map((t) => <tr key={t.name} className="border-t border-border/40"><td className="px-2 py-3 font-medium">{t.name}</td><td className="px-2 py-3 text-right">{t.leads}</td><td className="px-2 py-3 text-right">{t.won}</td><td className="px-2 py-3 text-right font-semibold">{money(t.revenue)}</td><td className="px-2 py-3 text-right">{t.rate}%</td></tr>)}</tbody>
           </table></div>
         </ChartCard>
-      </Section>
+      </Section>}
     </>}
   </div>;
 }
@@ -219,11 +226,11 @@ function ChartCard({ title, children, empty, emptyText = "No data for this repor
 }
 function Bars({ data }: { data: { label: string; value: number; hint: string }[] }) {
   const peak = Math.max(1, ...data.map((d) => d.value));
-  return <div className="flex h-52 items-end gap-2 sm:gap-3">{data.map((d) => <div key={d.label} className="flex h-full flex-1 flex-col items-center justify-end gap-2"><div className="w-full rounded-t-lg gradient-brand-bg transition-all" style={{ height: `${Math.max(2, (d.value / peak) * 100)}%` }} title={d.hint} /><span className="text-[10px] text-muted-foreground sm:text-xs">{d.label}</span></div>)}</div>;
+  return <div role="img" aria-label={data.map((d) => `${d.label}: ${d.hint}`).join("; ")} className="flex h-52 items-end gap-2 overflow-x-auto pb-2 sm:gap-3">{data.map((d) => <div key={d.label} className="flex h-full min-w-10 flex-1 flex-col items-center justify-end gap-2"><div className="w-full max-w-16 rounded-t-lg gradient-brand-bg motion-safe:transition-all" style={{ height: `${Math.max(0, (d.value / peak) * 85)}%` }} title={d.hint} /><span className="text-[10px] text-muted-foreground sm:text-xs">{d.label}</span></div>)}</div>;
 }
 function Meter({ label, value, total, display, muted }: { label: string; value: number; total: number; display?: string; muted?: boolean }) {
   return <div><div className="mb-1 flex justify-between gap-2 text-sm"><span className="truncate text-muted-foreground">{label}</span><span className="font-semibold">{display ?? `${pct(value, total)}%`}</span></div><div className="h-2 overflow-hidden rounded-full bg-muted/40"><div className={`h-full rounded-full ${muted ? "bg-muted-foreground/40" : "gradient-brand-bg"}`} style={{ width: `${total ? (value / total) * 100 : 0}%` }} /></div></div>;
 }
 function LoadingState() {
-  return <div className="space-y-5" aria-busy="true"><div className="grid grid-cols-2 gap-4 xl:grid-cols-4">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="glass h-28 animate-pulse rounded-2xl" />)}</div><div className="grid grid-cols-1 gap-5 lg:grid-cols-3"><div className="glass h-72 animate-pulse rounded-2xl lg:col-span-2" /><div className="glass h-72 animate-pulse rounded-2xl" /></div></div>;
+  return <div className="space-y-5" aria-busy="true" role="status" aria-label="Loading reports"><div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="glass h-28 motion-safe:animate-pulse rounded-2xl" />)}</div><div className="grid grid-cols-1 gap-5 lg:grid-cols-3"><div className="glass h-72 motion-safe:animate-pulse rounded-2xl lg:col-span-2" /><div className="glass h-72 motion-safe:animate-pulse rounded-2xl" /></div></div>;
 }

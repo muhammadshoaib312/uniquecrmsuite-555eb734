@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Reports use a read-only service snapshot and a dedicated loading/error hook, including the legacy stage-keyed deal board, so reporting cannot mutate completed CRM modules.
