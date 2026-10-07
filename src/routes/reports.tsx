@@ -138,11 +138,11 @@ function ReportsPage() {
 
     <GlassCard className="mb-5 !p-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <Filter label="Report category"><select className={select} value={category} onChange={(e) => setCategory(e.target.value)}>{["All reports", "Sales", "Leads", "Team"].map((c) => <option key={c}>{c}</option>)}</select></Filter>
-        <Filter label="Date range"><select className={select} value={range} onChange={(e) => setRange(e.target.value)}>{RANGES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}</select></Filter>
-        <Filter label="User / team"><select className={select} value={owner} onChange={(e) => setOwner(e.target.value)}><option>All</option>{owners.map((o) => <option key={o}>{o}</option>)}</select></Filter>
-        <Filter label="Lead source"><select className={select} value={source} onChange={(e) => setSource(e.target.value)}><option>All</option>{sourcesList.map((o) => <option key={o}>{o}</option>)}</select></Filter>
-        <Filter label="Deal status"><select className={select} value={dealStatus} onChange={(e) => setDealStatus(e.target.value)}>{DEAL_STATUSES.map((o) => <option key={o}>{o}</option>)}</select></Filter>
+        <Filter label="Report category"><select aria-label="Report category" className={select} value={category} onChange={(e) => setCategory(e.target.value)}>{["All reports", "Sales", "Leads", "Team"].map((c) => <option key={c}>{c}</option>)}</select></Filter>
+        <Filter label="Date range"><select aria-label="Date range" className={select} value={range} onChange={(e) => setRange(e.target.value)}>{RANGES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}</select></Filter>
+        <Filter label="User / team"><select aria-label="User / team" className={select} value={owner} onChange={(e) => setOwner(e.target.value)}><option>All</option>{owners.map((o) => <option key={o}>{o}</option>)}</select></Filter>
+        <Filter label="Lead source"><select aria-label="Lead source" className={select} value={source} onChange={(e) => setSource(e.target.value)}><option>All</option>{sourcesList.map((o) => <option key={o}>{o}</option>)}</select></Filter>
+        <Filter label="Deal status"><select aria-label="Deal status" className={select} value={dealStatus} onChange={(e) => setDealStatus(e.target.value)}>{DEAL_STATUSES.map((o) => <option key={o}>{o}</option>)}</select></Filter>
       </div>
     </GlassCard>
 
@@ -216,7 +216,7 @@ function ReportsPage() {
 }
 
 function Filter({ label, children }: { label: string; children: ReactNode }) {
-  return <label className="flex min-w-0 flex-col gap-1"><span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</span><span className="sr-only"> </span>{children}</label>;
+  return <label className="flex min-w-0 flex-col gap-1"><span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</span>{children}</label>;
 }
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return <section className="mb-6"><h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>{children}</section>;
