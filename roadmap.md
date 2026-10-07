@@ -1,3 +1,4 @@
 - [ ] Remove built-in business records from all CRM lists, details, global search and alerts while keeping user-created records.
 - [ ] Replace fabricated charts, totals and calendar activity with saved-data values or empty states.
 - [ ] Verify empty and populated workflows across existing screens without changing AI Assistant or Automation.
+- [ ] Complete Reports & Analytics overview, charts, filters, export and states without modifying other modules.
