@@ -17,6 +17,7 @@ import type {
   SupportTicket,
   Document,
   Activity,
+  LeadActivity,
 } from "@/types/models";
 
 /* Resource keys — the string is used for both the storage key suffix and
@@ -34,6 +35,7 @@ export const RESOURCES = {
   tickets: "tickets",
   documents: "documents",
   activities: "activities",
+  leadActivities: "lead-activities",
 } as const;
 
 class LeadService extends BaseService<Lead> {
@@ -56,6 +58,7 @@ export const services = {
   tickets: new BaseService<SupportTicket>(new Repository(RESOURCES.tickets)),
   documents: new BaseService<Document>(new Repository(RESOURCES.documents)),
   activities: new BaseService<Activity>(new Repository(RESOURCES.activities)),
+  leadActivities: new BaseService<LeadActivity>(new Repository(RESOURCES.leadActivities)),
 };
 
 export type Services = typeof services;

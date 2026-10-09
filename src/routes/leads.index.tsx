@@ -15,7 +15,9 @@ import {
   Pencil,
 } from "lucide-react";
 import { PageHeader, GlassCard, Badge, Avatar } from "@/components/crm-ui";
-import { Modal, Button, FormField, Input } from "@/components/ui-kit";
+import { LeadModal } from "@/components/lead-modal";
+import { logLeadActivity, followUpState, followUpTone, followUpLabel, formatFollowUp } from "@/lib/lead-activity";
+import { services } from "@/services";
 import { useLeadStore, type StoredLead } from "@/lib/lead-store";
 import { useOpenCreate } from "@/lib/use-open-create";
 
@@ -61,7 +63,13 @@ type Lead = {
   source: Source;
   owner: string;
   created: string;
+  followUpDate?: string;
+  followUpTime?: string;
+  followUpDone?: boolean;
 };
+
+type SortKey = "newest" | "oldest" | "name" | "company" | "priority" | "followup";
+const PRIORITY_RANK: Record<Priority, number> = { High: 0, Medium: 1, Low: 2 };
 
 
 const PAGE_SIZE = 8;
@@ -71,6 +79,8 @@ function LeadsPage() {
   const [status, setStatus] = useState<Status | "All">("All");
   const [source, setSource] = useState<Source | "All">("All");
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<SortKey>("newest");
+  const [followFilter, setFollowFilter] = useState<"All" | "overdue" | "upcoming">("All");
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<StoredLead | null>(null);
   useOpenCreate("leads", () => { setEditing(null); setAddOpen(true); });
@@ -80,7 +90,7 @@ function LeadsPage() {
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
-    return combined.filter(
+    const list = combined.filter(
       (l) =>
         (status === "All" || l.status === status) &&
         (source === "All" || l.source === source) &&
@@ -88,8 +98,27 @@ function LeadsPage() {
           l.name.toLowerCase().includes(q) ||
           l.company.toLowerCase().includes(q) ||
           l.email.toLowerCase().includes(q)),
-    );
-  }, [query, status, source, combined]);
+    ).filter((l) => {
+      if (followFilter === "All") return true;
+      const st = followUpState(l as StoredLead);
+      return followFilter === "overdue" ? st === "overdue" : st === "upcoming" || st === "today";
+    });
+    const created = (l: Lead) => Date.parse(l.created) || 0;
+    const fu = (l: Lead) => (l.followUpDate && !l.followUpDone ? Date.parse(`${l.followUpDate}T${l.followUpTime || "23:59"}`) : Infinity);
+    const sorted = [...list];
+    sorted.sort((a, b) => {
+      switch (sort) {
+        case "oldest": return created(a) - created(b);
+        case "name": return a.name.localeCompare(b.name);
+        case "company": return (a.company || "").localeCompare(b.company || "");
+        case "priority": return PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority];
+        case "followup": return fu(a) - fu(b);
+        default: return 0; // newest: storage order is newest-first
+      }
+    });
+    return sorted;
+  }, [query, status, source, combined, sort, followFilter]);
+  const overdueCount = combined.filter((l) => followUpState(l as StoredLead) === "overdue").length;
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageSafe = Math.min(page, totalPages);
@@ -100,7 +129,7 @@ function LeadsPage() {
     <div className="mx-auto max-w-7xl">
       <PageHeader
         title="Leads"
-        subtitle={`${filtered.length} leads · ${combined.filter((l) => l.status === "New").length} new`}
+        subtitle={`${filtered.length} leads · ${combined.filter((l) => l.status === "New").length} new${overdueCount ? ` · ${overdueCount} overdue follow-up${overdueCount > 1 ? "s" : ""}` : ""}`}
         actions={
           <div className="flex items-center gap-2">
             <button
@@ -162,10 +191,27 @@ function LeadsPage() {
             <option value="All">All sources</option>
             {SOURCES.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
-          <button className="glass inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium">
-            <Filter className="h-4 w-4" />
-            Filters
-          </button>
+          <select
+            value={followFilter}
+            onChange={(e) => { setFollowFilter(e.target.value as typeof followFilter); setPage(1); }}
+            className="glass h-10 rounded-lg border-0 px-3 text-sm outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
+            aria-label="Filter by follow-up"
+          >
+            <option value="All">All follow-ups</option>
+            <option value="overdue">Overdue</option>
+            <option value="upcoming">Upcoming</option>
+          </select>
+          <label className="glass inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="bg-transparent outline-none" aria-label="Sort leads">
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="name">Name A–Z</option>
+              <option value="company">Company A–Z</option>
+              <option value="priority">Priority</option>
+              <option value="followup">Next follow-up</option>
+            </select>
+          </label>
         </div>
 
         {/* Status chips */}
@@ -203,6 +249,7 @@ function LeadsPage() {
                 <th className="px-3 pb-3 font-medium">Status</th>
                 <th className="px-3 pb-3 font-medium">Priority</th>
                 <th className="px-3 pb-3 font-medium">Owner</th>
+                <th className="px-3 pb-3 font-medium">Follow-up</th>
                 <th className="px-3 pb-3 font-medium">Created</th>
                 <th className="px-3 pb-3 text-right font-medium">Actions</th>
               </tr>
@@ -231,7 +278,12 @@ function LeadsPage() {
                       {addedIds.has(l.id) ? (
                         <select
                           value={l.status}
-                          onChange={(e) => update(l.id, { status: e.target.value as Status })}
+                          onChange={(e) => {
+                            const next = e.target.value as Status;
+                            if (next === l.status) return;
+                            update(l.id, { status: next });
+                            void logLeadActivity(l.id, "status", `Status changed from ${l.status} to ${next}`, undefined, l.owner);
+                          }}
                           className={`glass h-7 rounded-full border-0 px-2 text-[11px] font-medium outline-none focus:ring-2 focus:ring-[color:var(--ring)] ${tone.text}`}
                         >
                           {(["New", "Contacted", "Qualified", "Proposal", "Won", "Lost"] as const).map((s) => (
@@ -256,6 +308,13 @@ function LeadsPage() {
                         <span className="text-muted-foreground">{l.owner}</span>
                       </div>
                     </td>
+                    <td className="px-3 py-3">
+                      {(() => {
+                        const st = followUpState(l as StoredLead);
+                        if (st === "none") return <span className="text-muted-foreground">—</span>;
+                        return <div className="flex flex-col gap-1"><Badge tone={followUpTone[st]}>{followUpLabel[st]}</Badge><span className="whitespace-nowrap text-[11px] text-muted-foreground">{formatFollowUp(l as StoredLead)}</span></div>;
+                      })()}
+                    </td>
                     <td className="px-3 py-3 text-muted-foreground">{l.created}</td>
                     <td className="px-3 py-3">
                       <div className="flex justify-end gap-1">
@@ -275,7 +334,10 @@ function LeadsPage() {
                               <Pencil className="h-3.5 w-3.5" />
                             </button>
                             <button
-                              onClick={() => { if (confirm("Delete this lead?")) remove(l.id); }}
+                              onClick={() => { if (confirm(`Delete lead "${l.name}"? This also removes its activity timeline.`)) {
+                                remove(l.id);
+                                void services.leadActivities.list().then((acts) => services.leadActivities.removeMany(acts.filter((a) => a.leadId === l.id).map((a) => a.id)));
+                              } }}
                               title="Delete lead"
                               className="glass grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:text-rose-300"
                             >
@@ -294,7 +356,7 @@ function LeadsPage() {
               })}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-3 py-16 text-center text-sm text-muted-foreground">
+                  <td colSpan={10} className="px-3 py-16 text-center text-sm text-muted-foreground">
                     No leads match your filters.
                   </td>
                 </tr>
@@ -355,8 +417,10 @@ function LeadsPage() {
         onSave={(l) => {
           if (editing) {
             update(editing.id, l);
+            if (editing.status !== l.status) void logLeadActivity(editing.id, "status", `Status changed from ${editing.status} to ${l.status}`, undefined, l.owner);
           } else {
-            add(l);
+            const created = add(l);
+            void logLeadActivity(created.id, "status", "Lead created", undefined, l.owner);
             setPage(1);
           }
           setAddOpen(false);
@@ -367,92 +431,3 @@ function LeadsPage() {
   );
 }
 
-type LeadForm = Omit<StoredLead, "id" | "created">;
-const EMPTY_FORM: LeadForm = {
-  name: "", company: "", email: "", phone: "",
-  status: "New", priority: "Medium", source: "Website", owner: "Alex N.",
-};
-
-function LeadModal({
-  open, editing, onClose, onSave,
-}: {
-  open: boolean;
-  editing: StoredLead | null;
-  onClose: () => void;
-  onSave: (l: LeadForm) => void;
-}) {
-  const [form, setForm] = useState<LeadForm>(EMPTY_FORM);
-  useEffect(() => {
-    if (editing) {
-      const { id: _id, created: _created, ...rest } = editing;
-      setForm(rest);
-    } else {
-      setForm(EMPTY_FORM);
-    }
-  }, [editing, open]);
-
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={editing ? "Edit lead" : "Add lead"}
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => { if (!form.name || !form.email) return; onSave(form); }}>
-            {editing ? "Save changes" : "Create lead"}
-          </Button>
-        </>
-      }
-    >
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <FormField label="Full name">
-          <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Jane Doe" />
-        </FormField>
-        <FormField label="Company">
-          <Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} placeholder="Acme Corp" />
-        </FormField>
-        <FormField label="Email">
-          <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="jane@acme.co" />
-        </FormField>
-        <FormField label="Phone">
-          <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+1 555…" />
-        </FormField>
-        <FormField label="Status">
-          <select
-            value={form.status}
-            onChange={(e) => setForm({ ...form, status: e.target.value as StoredLead["status"] })}
-            className="glass h-10 w-full rounded-lg border-0 px-3 text-sm outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
-          >
-            {(["New", "Contacted", "Qualified", "Proposal", "Won", "Lost"] as const).map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </FormField>
-        <FormField label="Priority">
-          <select
-            value={form.priority}
-            onChange={(e) => setForm({ ...form, priority: e.target.value as StoredLead["priority"] })}
-            className="glass h-10 w-full rounded-lg border-0 px-3 text-sm outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
-          >
-            {(["High", "Medium", "Low"] as const).map((p) => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
-        </FormField>
-        <FormField label="Source">
-          <select
-            value={form.source}
-            onChange={(e) => setForm({ ...form, source: e.target.value as Source })}
-            className="glass h-10 w-full rounded-lg border-0 px-3 text-sm outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
-          >
-            {SOURCES.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </FormField>
-        <FormField label="Owner">
-          <Input value={form.owner} onChange={(e) => setForm({ ...form, owner: e.target.value })} />
-        </FormField>
-      </div>
-    </Modal>
-  );
-}
