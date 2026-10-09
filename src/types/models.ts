@@ -44,6 +44,23 @@ export interface Lead {
   source: LeadSource;
   owner: string;
   created: string;
+  notes?: string;
+  followUpDate?: string;
+  followUpTime?: string;
+  followUpNote?: string;
+  followUpDone?: boolean;
+}
+
+export type LeadActivityType = "note" | "call" | "email" | "meeting" | "status" | "follow-up";
+
+export interface LeadActivity {
+  id: ID;
+  leadId: ID;
+  type: LeadActivityType;
+  title: string;
+  body?: string;
+  createdAt: ISODate;
+  actor?: string;
 }
 
 export interface Contact {
