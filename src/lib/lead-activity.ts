@@ -47,9 +47,9 @@ export function formatFollowUp(lead: Lead): string {
   });
 }
 
-export const followUpTone: Record<FollowUpState, "danger" | "warning" | "info" | "success" | "default"> = {
-  overdue: "danger",
-  today: "warning",
+export const followUpTone: Record<FollowUpState, "brand" | "warning" | "info" | "success" | "default"> = {
+  overdue: "warning",
+  today: "brand",
   upcoming: "info",
   done: "success",
   none: "default",
