@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Reports use a read-only service snapshot and a dedicated loading/error hook, including the legacy stage-keyed deal board, so reporting cannot mutate completed CRM modules.
+- Lead timeline entries live in the separate leadActivities service (keyed by leadId) and follow-ups are fields on the lead, so timeline history survives lead edits without changing other modules.
