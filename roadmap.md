@@ -1,6 +1,5 @@
-Current scope: Reports & Analytics only; previous cross-module cleanup is outside this request.
+Current scope: Lead Management, Activity Timeline and Follow-ups.
 
-- [x] Complete saved-record overview, sales/conversion/pipeline charts and team summary.
-- [x] Add date, category, owner, source and deal-status filters with CSV and print/PDF export.
-- [x] Verify empty, populated, error/retry and desktop/tablet/mobile states, including a lead created through the existing form.
-- [x] Preserve navigation and completed CRM modules.
+- [x] Lead CRUD with validation, notes, sorting, follow-up filter, pagination.
+- [x] Activity timeline (notes, calls, emails, meetings, status changes, follow-ups).
+- [x] Follow-up scheduling, overdue/upcoming indicators, mark completed.
